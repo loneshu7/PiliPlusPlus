@@ -22,3 +22,4 @@ $buildTime = [int][DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 if ($env:GITHUB_ENV) {
     Add-Content -Path $env:GITHUB_ENV -Value "version=$versionName+$versionCode"
 }
+
