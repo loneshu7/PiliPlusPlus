@@ -997,3 +997,4 @@ the final audit artifact. The formal release baseline remains unchanged.
   不再用 Git commit 数量重写 Android `versionCode`，避免自动构建生成低于既有交付包的
   版本。自动构建只上传 Actions artifact；创建 GitHub Release 仍需要手动触发并明确提供
   tag，正式交付仍应执行项目 release 校验和真机验收。
+
