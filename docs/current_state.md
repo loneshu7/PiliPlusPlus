@@ -1125,3 +1125,14 @@ the final audit artifact. The formal release baseline remains unchanged.
 - 本批仍未执行 Android 真机回归。mpv/ExoPlayer 点播与直播、控制层和手势、音频、切源、
   应用内小窗、系统 PiP、前后台及生命周期须在合并后的准确源码状态上复核；自动化通过不
   等同真机验收。
+
+### 2026-08-20 Android-only 构建与交付范围
+
+- 用户决定先采用低风险的 Android-only 方案：项目当前只构建、测试和交付 Android 产物，
+  暂不删除 iOS、macOS、Windows、Linux 平台目录、条件代码和依赖，以降低后续同步上游的冲突。
+- `.github/workflows/build.yml` 的手动输入和任务图已移除 iOS、macOS、Windows、Linux，
+  保留 Flutter 格式、静态分析、测试以及 Android 签名、分 ABI 构建、artifact 和 Release 流程。
+- 四个非 Android 可复用 workflow 文件继续保留供上游同步和历史参考，但已移除各自的
+  `workflow_dispatch`，主 workflow 也不再引用它们，因此不会自动或手动产生非 Android 构建。
+- 本次只修改 CI 调度、README 平台说明和状态文档，没有修改运行时代码、平台目录、应用身份、版本、签名或
+  ExoPlayer/mpv 行为；Android 真机回归状态及播放器迁移验收门槛保持不变。

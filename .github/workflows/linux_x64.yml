@@ -8,8 +8,6 @@ on:
         required: false
         default: ""
         type: string
-  workflow_dispatch:
-
 jobs:
   build-linux-app:
     name: Release Linux x64
