@@ -20,8 +20,8 @@
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
 - 已获取并合入的 `upstream/main`：`e09754991e1d2395d1011421227772b6ba185ff0`
   (`fix ios bottom sheet patch`)。
-- 当前分支相对 `upstream/main` 领先 103、落后 0，merge-base 为 `e097549`；相对
-  `origin/main` 领先 6、落后 0。提交数以实际 `git rev-list` 为准。
+- 当前分支相对 `upstream/main` 领先 104、落后 0，merge-base 为 `e097549`；相对
+  `origin/main` 领先 7、落后 0。提交数以实际 `git rev-list` 为准。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -1189,3 +1189,5 @@ the final audit artifact. The formal release baseline remains unchanged.
   这些 APK 仅用于同步审计，不更新正式发布基线。
 - 本批未执行 Android 真机回归；自动化通过不替代 mpv/ExoPlayer 点播、直播、手势、小窗、
   系统 PiP 和前后台场景在合并后准确源码状态上的真机复核。
+- 分支提交 `b326cfa` 的 PR Run `32369487886` 与 push Run `32369463689` 均成功：
+  两次 Flutter quality 和两次 Android 构建全部通过；PR #5 状态为 `CLEAN`、`MERGEABLE`。
