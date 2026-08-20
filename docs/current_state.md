@@ -1136,3 +1136,15 @@ the final audit artifact. The formal release baseline remains unchanged.
   `workflow_dispatch`，主 workflow 也不再引用它们，因此不会自动或手动产生非 Android 构建。
 - 本次只修改 CI 调度、README 平台说明和状态文档，没有修改运行时代码、平台目录、应用身份、版本、签名或
   ExoPlayer/mpv 行为；Android 真机回归状态及播放器迁移验收门槛保持不变。
+
+### 2026-08-20 PR #4 主分支冲突处理
+
+- Android-only 修改已提交为 `23d8534`；随后将 `origin/main@ae18cb4` 合入当前
+  `agent/exoplayer-concrete-hwdec`，合并提交为 `b2b3bdf`。合并未使用 rebase 或强制推送。
+- `.github/workflows/build.yml`、`README.md`、`docs/current_state.md` 和
+  `tool/patch_media_kit_checksums.ps1` 的冲突均保留当前分支中更新的 Android-only、签名、
+  checksum 幂等修复和项目状态语义；`origin/main` 的其余提交由 Git 正常合入。
+- 合并时同时清理了 `origin/main` 带入的 `tool/write_ci_build_metadata.ps1` 文件末尾空白，
+  未修改脚本逻辑。冲突标记扫描、`git diff --check`、Android-only workflow 引用检查以及两个
+  PowerShell 工具的语法解析均通过；完整 Flutter quality 和 Android 构建由 PR 推送后的
+  GitHub Actions 继续验证，本地未重复执行 Android 真机回归。
