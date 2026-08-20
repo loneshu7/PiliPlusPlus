@@ -8,21 +8,20 @@
 
 ## 仓库基线
 
-- 当前分支：`agent/exoplayer-concrete-hwdec`
-- 本次播放器/上游合并基线：`50942c2`
-  (`Merge remote-tracking branch 'upstream/main' into agent/exoplayer-concrete-hwdec`)；随后
-  追加纯格式提交 `26fe34d`。
+- 当前分支：`agent/upstream-e097549`
+- 本次同步起点：`origin/main@12078a5e5cc686ee90869af7bb2dcebb526ec285`
+  (`Merge pull request #4 from loneshu7/agent/exoplayer-concrete-hwdec`)。
 - 最新 GitHub 发布源提交：`859d39c4ff3c77c37e1cc1d7131192df8f8b4241`
   (`chore: prepare 2.1.2 release`)
 - 最新功能快照：`0c647b51ae60defc39c6171e5ca9387e43e596d2`
   (`feat: retry decoder failures with software video fallback`)
-- 最新上游合并提交：`50942c2`
-  (`Merge remote-tracking branch 'upstream/main' into agent/exoplayer-concrete-hwdec`)
+- 最新上游合并提交：`c0f25ca93521daba869fc449937fe2d3ef719720`
+  (`Merge remote-tracking branch 'upstream/main' into agent/upstream-e097549`)。
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
-- 已获取并合入的 `upstream/main`：`9a4e5874b9777315b992145b50d30ce9ce0e3b6f`
-  (`optimize imports`)
-- 当前分支相对 `upstream/main` 已无落后；merge-base 即
-  `9a4e5874b9777315b992145b50d30ce9ce0e3b6f`。当前分支提交数以 `git rev-list` 为准。
+- 已获取并合入的 `upstream/main`：`e09754991e1d2395d1011421227772b6ba185ff0`
+  (`fix ios bottom sheet patch`)。
+- 当前分支相对 `upstream/main` 领先 103、落后 0，merge-base 为 `e097549`；相对
+  `origin/main` 领先 6、落后 0。提交数以实际 `git rev-list` 为准。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -1155,3 +1154,38 @@ the final audit artifact. The formal release baseline remains unchanged.
   清理的情况下连续执行两次 Flutter patch 阶段均成功。修复提交 `a145e4c` 的 PR Run
   `32363061893` 与 push Run `32363058047` 均成功：两次 Flutter quality（补丁、格式、分析、
   测试）和两次 Android 构建全部通过，PR #4 最终状态为 `CLEAN`、`MERGEABLE`。
+
+### 2026-08-20 上游 Flutter 3.47.1 同步
+
+- 从已合入 PR #4 的 `origin/main@12078a5` 创建独立分支 `agent/upstream-e097549`，
+  合入 `upstream/main@e097549` 的 3 个提交：`a939207`（Flutter 3.47.1）、`5fd1645`
+  （Reformat）和 `e097549`（iOS bottom sheet patch 修复）；合并提交为 `c0f25ca`。
+- 上游原始范围涉及 24 个文件；已有两项格式结果相同，实际合并落地 22 个文件、156 行新增、
+  164 行删除。`pubspec.yaml`/lock 将 Flutter 提升到 3.47.1、Dart 下限提升到 3.13；
+  `lib/plugin/pl_player/widgets/mpv_convert_webp.dart` 只有 formatter 换行变化。
+- 合并无文本冲突。Android 原生目录、`.github`、`tool`、ExoPlayer 受保护路径以及
+  `com.shudo.plusplus` applicationId/namespace 均未变化；Android-only CI、签名校验和
+  Flutter 缓存补丁幂等修复保持不变。
+- 已从本地 Flutter tag 创建隔离工具链
+  `D:\CodexToolchains\PiliPlus\flutter-sdk\flutter-3.47.1`；Flutter SDK patch 和
+  material_ui patch 均成功应用。Dart 3.13 formatter 需要调整两份既有 ExoPlayer 测试的换行，
+  纯格式提交为 `48d8327`；最终格式检查通过（1330 文件、0 changed）。
+- `dart analyze` 通过，0 error、0 warning、35 条既有 info；完整
+  `flutter test --no-pub --concurrency=1` 通过 69/69；Android `:app:testDebugUnitTest` 和
+  Flutter Release 分 ABI 构建通过。media_kit 三个原生资源 checksum 严格校验保持当前值。
+- 三份同步验证 APK 均通过 `tool/verify_release.ps1 -AllowAlreadyDelivered`，确认
+  applicationId `com.shudo.plusplus`、应用名 `pili++`、versionName `2.1.8`、versionCode
+  `2026081004`、单一目标 ABI 和证书 SHA-256
+  `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C`：
+  - `build/app/outputs/flutter-apk/pili++-2.1.8-2026081004-armeabi-v7a-release-upstream-e097549-validation.apk`
+    （24,612,988 字节，SHA-256
+    `F82BB2DA497349135F5788F1495A0C91ED9F6ECA6035DA541370DF736A455A6A`）；
+  - `build/app/outputs/flutter-apk/pili++-2.1.8-2026081004-arm64-v8a-release-upstream-e097549-validation.apk`
+    （24,709,491 字节，SHA-256
+    `28F84E6A3C8203E47BD1C8A2982B2503C30729E3653EE8B4F8472A3DB033BBE6`）；
+  - `build/app/outputs/flutter-apk/pili++-2.1.8-2026081004-x86_64-release-upstream-e097549-validation.apk`
+    （25,689,113 字节，SHA-256
+    `A26B32F0AF19313D98141344F3D9FB8433E9909BF299FBB074307A62C6EFD2B5`）。
+  这些 APK 仅用于同步审计，不更新正式发布基线。
+- 本批未执行 Android 真机回归；自动化通过不替代 mpv/ExoPlayer 点播、直播、手势、小窗、
+  系统 PiP 和前后台场景在合并后准确源码状态上的真机复核。
