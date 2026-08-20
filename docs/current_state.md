@@ -1148,3 +1148,9 @@ the final audit artifact. The formal release baseline remains unchanged.
   未修改脚本逻辑。冲突标记扫描、`git diff --check`、Android-only workflow 引用检查以及两个
   PowerShell 工具的语法解析均通过；完整 Flutter quality 和 Android 构建由 PR 推送后的
   GitHub Actions 继续验证，本地未重复执行 Android 真机回归。
+- 首次推送后的 push Run `32362744341` 在 `Flutter quality / Apply Flutter patches` 失败：
+  quality job 不传平台参数，而脚本此前只在 Android/Linux 分支重置 Flutter SDK；缓存恢复
+  已打补丁的 SDK 后重复 `git apply` 会失败。`lib/scripts/patch.ps1` 现进入 `FLUTTER_ROOT` 后
+  统一执行 `git reset --hard HEAD`，再按原流程应用补丁。固定 Flutter 3.47.0 SDK 在不手动
+  清理的情况下连续执行两次 Flutter patch 阶段均成功；完整新 CI 结果仍以修复推送后的
+  GitHub Actions 为准。

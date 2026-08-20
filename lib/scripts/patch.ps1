@@ -118,6 +118,9 @@ if ($platform.ToLower() -eq "ios") {
 
 Set-Location $env:FLUTTER_ROOT
 
+# Flutter's cached SDK may already contain changes from a previous CI run.
+git reset --hard HEAD
+
 $picks   = @()
 $reverts = @()
 $patches = @($ModalBarrierPatch, $TextSelectionPatch, $MouseCursorPatch,
