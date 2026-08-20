@@ -48,13 +48,9 @@ Android 端使用 Media3 ExoPlayer 替代 mpv，同时保留原有 Flutter 播�
 
 - Android
 - Android Pad
-- iOS / iPadOS
-- Windows
-- Linux
-- macOS
 
-本仓库当前的重点开发和交付平台为 Android，其他平台能力主要继承自上游
-PiliPlus。
+本仓库只构建、测试和交付 Android 版本。iOS、macOS、Windows 和 Linux 的平台目录与
+条件代码暂时保留，以便继续同步上游 PiliPlus，但不作为本项目当前支持或发布的平台。
 
 ## 主要功能
 
@@ -194,3 +190,12 @@ Actions artifact，不创建 GitHub Release；正式发布仍需手动触发 wor
 
 本项目依据 [GNU General Public License v3.0](LICENSE) 发布。
 
+## Star History
+
+<a href="https://star-history.dera.page/#bggRGjQaUbCoE/PiliPlus&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
+   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
+ </picture>
+</a>

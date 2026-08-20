@@ -12,8 +12,8 @@ import 'package:PiliPlus/pages/hot/controller.dart';
 import 'package:PiliPlus/pages/rank/view.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
 
 class HotPage extends StatefulWidget {
   const HotPage({super.key});

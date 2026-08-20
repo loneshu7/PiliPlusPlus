@@ -1,6 +1,6 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-08-16 +08:00
+> 最后核对：2026-08-20 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
@@ -8,26 +8,29 @@
 
 ## 仓库基线
 
-- 当前分支：`main`
-- 当前 HEAD：`2072a6665daec72ae56cddd61463a592189921a8`
-  (`feat: sync player fixes and release 2.1.7`)
+- 当前分支：`agent/exoplayer-concrete-hwdec`
+- 本次播放器/上游合并基线：`50942c2`
+  (`Merge remote-tracking branch 'upstream/main' into agent/exoplayer-concrete-hwdec`)；随后
+  追加纯格式提交 `26fe34d`。
 - 最新 GitHub 发布源提交：`859d39c4ff3c77c37e1cc1d7131192df8f8b4241`
   (`chore: prepare 2.1.2 release`)
 - 最新功能快照：`0c647b51ae60defc39c6171e5ca9387e43e596d2`
   (`feat: retry decoder failures with software video fallback`)
-- 最新上游合并提交：`ae6b7aaceefb5d4218693c15825f751c3b7a1f4d`
-  (`Merge upstream/main into main`)
+- 最新上游合并提交：`50942c2`
+  (`Merge remote-tracking branch 'upstream/main' into agent/exoplayer-concrete-hwdec`)
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
-- 已获取并合入的 `upstream/main`：`36dec609315cd34f8895cf15607f1cc582a66f01`
-- 当前分支相对 `upstream/main` 为本地领先 69、落后 0；merge-base 即
-  `36dec609315cd34f8895cf15607f1cc582a66f01`。
+- 已获取并合入的 `upstream/main`：`9a4e5874b9777315b992145b50d30ce9ce0e3b6f`
+  (`optimize imports`)
+- 当前分支相对 `upstream/main` 已无落后；merge-base 即
+  `9a4e5874b9777315b992145b50d30ce9ce0e3b6f`。当前分支提交数以 `git rev-list` 为准。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
 - `README.md` 已更新当前 ExoPlayer 迁移进度、应用内小窗行为、默认开关状态和
   上游同步说明；远程状态以实际 `git status` 和跟踪分支为准。
-- 当前工作区未提交修改同时包含 2026-08-10 的竖屏全屏连续缩放/2.1.8 交付记录，以及
-  2026-08-11 的 ExoPlayer 换源宽高比修复；后续不得把两组修改互相覆盖或当作已提交。
+- 本次上游同步前的本地 CI 修复已提交为 `4207fb2`，成功 Android CI 记录为 `1582a5b`；
+  合并提交 `03ed055` 已包含上游新增的 `810c26a`、`f73b9c9`、`f8b9ef3` 三个提交。
+  当前工作区以实际 `git status` 为准。
 
 ## 应用与发布身份
 
@@ -989,9 +992,9 @@ the final audit artifact. The formal release baseline remains unchanged.
 
 ### 2026-08-15 GitHub Actions Android CI
 
-- `Build` workflow 现在在 PR 和 `main` 推送时运行 Flutter 格式、静态分析和测试；PR 继续
-  生成开发 APK，`main` 推送或手动运行则从 GitHub Secrets 注入当前发布证书并生成签名
-  Android artifact。Secrets 为 `SIGN_KEYSTORE_BASE64`、`KEYSTORE_PASSWORD`、`KEY_ALIAS`、
+- `Build` workflow 现在在所有分支的非 Markdown 推送和 PR 上运行 Flutter 格式、静态分析和测试；
+  纯 Markdown 提交仍由 `paths-ignore` 跳过。PR 继续生成开发 APK，非 PR 推送或手动运行则从
+  GitHub Secrets 注入当前发布证书并生成签名 Android artifact。Secrets 为 `SIGN_KEYSTORE_BASE64`、
   `KEY_PASSWORD`，已按当前本地证书更新；证书和密码不写入 Git。
 - CI 构建元数据改由 `tool/write_ci_build_metadata.ps1` 从现有 `pubspec.yaml` 读取版本，
   不再用 Git commit 数量重写 Android `versionCode`，避免自动构建生成低于既有交付包的
@@ -1012,3 +1015,143 @@ the final audit artifact. The formal release baseline remains unchanged.
   `libmpv-android-video-build` `vnext` 于 2026-08-13 更新后的资源不一致；没有跳过校验，
   新增 `tool/patch_media_kit_checksums.ps1` 严格替换已核实的三个当前 MD5 后恢复完整性校验。
 
+### 2026-08-17 上游 Material UI/依赖同步
+
+- 在工作区干净、上游 `upstream/main@f8b9ef3` 已 fetch 后合并上游新增的三个提交：
+  `810c26a`（Material UI 迁移）、`f73b9c9`（Star History 修复）、`f8b9ef3`（依赖升级）。
+  合并提交为 `03ed055`，合并前本地领先 77、上游领先 3；合并后本地领先 78、落后 0。
+- 上游改动涉及 510 个文件；27 个文件与本地改造重叠，实际只有 5 个内容冲突。
+  `.github/workflows/build.yml` 保留本地 checksum、签名 Secrets、构建元数据和签名材料清理；
+  `lib/pages/video/view.dart` 保留本地视频 Listener、全屏和应用内小窗手势；
+  `lib/plugin/pl_player/widgets/play_pause_btn.dart` 保留统一 `PlayerStatus` 回调，未恢复
+  上游直接订阅 media_kit 的实现。Android Media3、应用内小窗、PiP、发布校验和状态文档文件
+  未被删除或覆盖。
+- 接受上游 `material_ui`、`cupertino_ui` 依赖以及 `flex_seed_scheme`/`getx` 的 `dev` 引用；
+  其余播放器和业务逻辑仅做 Material UI 导入迁移。Flutter 3.47.0 工具链和项目 Flutter/material_ui
+  patches 已应用。
+- 合并后验证：`dart format --output=none --set-exit-if-changed lib test` 通过；`dart analyze`
+  为 0 error、0 warning、35 条既有 info；`flutter test --no-pub --concurrency=1` 通过 69/69；
+  Android `:app:testDebugUnitTest` 通过；Flutter Release 分 ABI 构建通过。
+- 本地 Release 审计产物（未更新正式发布基线）：
+  `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk` SHA-256
+  `037665AFBAB111B8F87F895FE0BF050D8A7E35D7DBD8C452B93F1A41A3942E8D`；
+  `build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk` SHA-256
+  `3759DB653EA61579F42C53E4949475D53D4C0AF1A3E352F0256F09FE71D6ACBB`；
+  `build/app/outputs/flutter-apk/app-x86_64-release.apk` SHA-256
+  `5E47CD1743E38B6B8104081DC1668B21F8416E85612F98167B1203989E0846BA`。
+  三份 APK 均通过 `tool/verify_release.ps1 -AllowAlreadyDelivered`，applicationId、应用名、
+  versionName/versionCode、ABI 和证书 `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C`
+  一致。当前没有新增正式交付包，版本基线仍为 `2026081004`。
+- 本批未执行 Android 真机回归；mpv/ExoPlayer 播放控制、手势、应用内小窗和系统 PiP 仍需在
+  合并后的准确源码状态上按既有矩阵复核，不能仅凭自动化结果标记真机验收完成。
+
+### 2026-08-17 上游同步
+
+- 在工作区干净且本地 CI 修复已提交为 `d7f7d259c6aa15676aebd02e19e9bae2aeecf023` 后，
+  fetch 并合入 `upstream/main@3a7d4614743cb7289293d6c47e13d96aec544f18`。上游本批新增 15 个
+  提交、改动 38 个文件；合并提交为 `4b827302d526eb35a9314590cba0d3b2e87ce4c6`。
+- `lib/main.dart`、`pubspec.yaml` 自动合并；`lib/pages/video/view.dart` 的唯一文本冲突已
+  人工处理：保留本地视频区域 `Listener` 和四个指针回调，以保持下拉进入应用内小窗手势；
+  采用上游黑色背景 `isAntiAlias: false` 与封面层布局修正。未删除播放器控制层、ExoPlayer
+  或应用内小窗逻辑。
+- 使用独立 Flutter 3.47.0 工具链并按 CI 应用项目 patches：`dart format --output=none
+  --set-exit-if-changed lib test` 通过（1330 个文件，0 changed）；`dart analyze` 通过，
+  0 error、0 warning、35 条既有 info；`flutter test --no-pub --concurrency=1` 通过 69/69。
+- Android `:app:testDebugUnitTest`/Release 构建已启动并完成源码与插件编译前置阶段，但在
+  `:app:mergeDebugAssets` 获取 Flutter 3.47 engine artifact 时，Java TLS 连接
+  `https://storage.googleapis.com/download.flutter.io/.../armeabi_v7a_debug-1.0.0-5f776256...pom`
+  被远端中断而失败。该次没有生成可交付 APK；Android 构建与真机验证保持待完成，不能以此
+  次失败宣称 Android Release 已验证。
+
+### 2026-08-17 Actions checksum fix
+
+- 手动 Actions Run `31987028340` 的 Android job 在 `Refresh media_kit native checksums` 失败：
+  上游 `media_kit` 使用 `url + md5` 条目，而旧脚本只匹配 `name + md5`，并且把“已是正确值”
+  错误当成未更新失败。
+- `tool/patch_media_kit_checksums.ps1` 现同时匹配两种条目格式，依据当前
+  `.dart_tool/package_config.json` 选择实际使用的 Git checkout，并允许已正确 checksum 幂等
+  通过；缺失、重复或未知值仍会严格失败。
+- 本地 Flutter 3.47.0 Pub 缓存验证通过，输出 `media_kit native checksums already current`；
+  修复提交为 `4207fb2540448e660e7df1fc763ec4a29f076826` 并已推送。新的 Android-only Run
+  `31991855057` 已通过 Flutter quality、checksum 校验、Release APK 构建、签名材料清理、
+  重命名和三个 artifact 上传。产物为 `pili++_android_2.1.8+2026081004_arm64-v8a.apk`、
+  `pili++_android_2.1.8+2026081004_armeabi-v7a.apk`、
+  `pili++_android_2.1.8+2026081004_x86_64.apk`；本次手动运行未创建 GitHub Release。
+
+### 2026-08-20 上游 8 提交同步
+
+- 在工作区干净、`HEAD=9733fe3`、`upstream/main=f8b9ef3` 的基础上，先 fetch 到
+  `upstream/main@9a4e5874b9777315b992145b50d30ce9ce0e3b6f`。同步前本地领先 83、上游领先
+  8，merge-base 为 `f8b9ef3e6eca50dafb187cfbcdd67cab78ee4d61`。
+- 上游新增提交为：`b11815c`（禁用 Linux Impeller）、`97652a1`（动态/Opus 分享和模型
+  修复）、`08456a1`（依赖升级，含 media_kit `75dfa37`）、`1226ef0`（批量 import 整理）、
+  `9d99693`（material_ui 构建脚本修复）、`8bf39dd`（桌面窗口/横滑和播放器信息调整）、
+  `b6e9da1`（关闭全部时退出桌面全屏）和 `9a4e587`（第二批 import 整理）。
+- 上游触及 267 个文件，其中 16 个与本地播放器/业务改造重叠；实际内容冲突只有
+  `lib/pages/video/widgets/header_control.dart` 和 `lib/plugin/pl_player/view/view.dart`。
+  前者保留本地后端中立 `PlayerInfoDialog`、Media3 轨道/信息入口，不重新引入上游旧的
+  `NativePlayer` 直接依赖；后者保留 `PlPlayerSurface` 和 Media3/mpv 渲染隔离，仅采用
+  import 整理。上游桌面关闭全屏修复、动态 Opus 分享、依赖锁文件、构建脚本和 import
+  整理均已合入；Android Media3 原生插件、应用内小窗、系统 PiP、签名身份和 checksum
+  校验脚本未被覆盖。
+- 合并提交为 `50942c2`，随后 Flutter 3.47 formatter 产生的两个 import 换行修复提交为
+  `26fe34d`。当前 merge-base 为 `upstream/main@9a4e587`，分支相对上游领先 85、落后 0，
+  工作区已清理。
+- 使用正确工具链 `D:\CodexToolchains\PiliPlus\flutter-sdk\flutter-3.47.0`（Flutter 3.47.0、
+  Dart 3.13.0、engine `5f77625673`）执行 `pub get` 成功，确认 media_kit checkout 已更新到
+  `75dfa37`；项目 material_ui 兼容补丁已重新应用。`dart format --output=none
+  --set-exit-if-changed lib test` 通过（1330 文件，0 changed），`dart analyze` 通过，0 error、
+  0 warning、35 条既有 info，`git diff --check` 通过。
+- 2026-08-20 在同步记录提交 `7267c89` 的准确源码状态上补完自动化验证：完整
+  `flutter test --no-pub --concurrency=1` 通过 69/69；格式检查通过（1330 文件、0 changed）；
+  `dart analyze` 为 0 error、0 warning、35 条既有 info；Android
+  `:app:testDebugUnitTest` 构建成功。此前 Flutter SDK lockfile 和 Gradle
+  `native-platform.dll` 阻塞均由允许固定 `D:` 工具链缓存目录正常写入后消除，不是源码失败。
+- Flutter 3.47.0 分 ABI Android Release 构建成功。以下三个验证包均通过
+  `tool/verify_release.ps1 -AllowAlreadyDelivered`，确认 applicationId
+  `com.shudo.plusplus`、应用名 `pili++`、versionName `2.1.8`、versionCode
+  `2026081004`、单一目标 ABI 和证书 SHA-256
+  `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C`：
+  - `build/app/outputs/flutter-apk/pili++-2.1.8-2026081004-armeabi-v7a-release-upstream-9a4e587-validation.apk`
+    （24,623,879 字节，SHA-256
+    `AEE656D4C5A92828E9E0C1A4B1B7638EE754210BCCD616BDF881CD3085104AA1`）；
+  - `build/app/outputs/flutter-apk/pili++-2.1.8-2026081004-arm64-v8a-release-upstream-9a4e587-validation.apk`
+    （24,709,859 字节，SHA-256
+    `092853380253109458A2E552CD463C503401A8BEE8E59A9C3472B5A7203D8702`）；
+  - `build/app/outputs/flutter-apk/pili++-2.1.8-2026081004-x86_64-release-upstream-9a4e587-validation.apk`
+    （25,693,505 字节，SHA-256
+    `0C668A6025AE08FBB41494A211690AFFE3939095F55D39A6263C94DDDA8FE87C`）。
+  这些包仅用于同步后源码审计，不替代最近正式交付、不更新发布基线。
+- 本批仍未执行 Android 真机回归。mpv/ExoPlayer 点播与直播、控制层和手势、音频、切源、
+  应用内小窗、系统 PiP、前后台及生命周期须在合并后的准确源码状态上复核；自动化通过不
+  等同真机验收。
+
+### 2026-08-20 Android-only 构建与交付范围
+
+- 用户决定先采用低风险的 Android-only 方案：项目当前只构建、测试和交付 Android 产物，
+  暂不删除 iOS、macOS、Windows、Linux 平台目录、条件代码和依赖，以降低后续同步上游的冲突。
+- `.github/workflows/build.yml` 的手动输入和任务图已移除 iOS、macOS、Windows、Linux，
+  保留 Flutter 格式、静态分析、测试以及 Android 签名、分 ABI 构建、artifact 和 Release 流程。
+- 四个非 Android 可复用 workflow 文件继续保留供上游同步和历史参考，但已移除各自的
+  `workflow_dispatch`，主 workflow 也不再引用它们，因此不会自动或手动产生非 Android 构建。
+- 本次只修改 CI 调度、README 平台说明和状态文档，没有修改运行时代码、平台目录、应用身份、版本、签名或
+  ExoPlayer/mpv 行为；Android 真机回归状态及播放器迁移验收门槛保持不变。
+
+### 2026-08-20 PR #4 主分支冲突处理
+
+- Android-only 修改已提交为 `23d8534`；随后将 `origin/main@ae18cb4` 合入当前
+  `agent/exoplayer-concrete-hwdec`，合并提交为 `b2b3bdf`。合并未使用 rebase 或强制推送。
+- `.github/workflows/build.yml`、`README.md`、`docs/current_state.md` 和
+  `tool/patch_media_kit_checksums.ps1` 的冲突均保留当前分支中更新的 Android-only、签名、
+  checksum 幂等修复和项目状态语义；`origin/main` 的其余提交由 Git 正常合入。
+- 合并时同时清理了 `origin/main` 带入的 `tool/write_ci_build_metadata.ps1` 文件末尾空白，
+  未修改脚本逻辑。冲突标记扫描、`git diff --check`、Android-only workflow 引用检查以及两个
+  PowerShell 工具的语法解析均通过；完整 Flutter quality 和 Android 构建由 PR 推送后的
+  GitHub Actions 继续验证，本地未重复执行 Android 真机回归。
+- 首次推送后的 push Run `32362744341` 在 `Flutter quality / Apply Flutter patches` 失败：
+  quality job 不传平台参数，而脚本此前只在 Android/Linux 分支重置 Flutter SDK；缓存恢复
+  已打补丁的 SDK 后重复 `git apply` 会失败。`lib/scripts/patch.ps1` 现进入 `FLUTTER_ROOT` 后
+  统一执行 `git reset --hard HEAD`，再按原流程应用补丁。固定 Flutter 3.47.0 SDK 在不手动
+  清理的情况下连续执行两次 Flutter patch 阶段均成功。修复提交 `a145e4c` 的 PR Run
+  `32363061893` 与 push Run `32363058047` 均成功：两次 Flutter quality（补丁、格式、分析、
+  测试）和两次 Android 构建全部通过，PR #4 最终状态为 `CLEAN`、`MERGEABLE`。

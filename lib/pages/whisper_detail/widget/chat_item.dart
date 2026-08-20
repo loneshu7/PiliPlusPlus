@@ -23,7 +23,7 @@ import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
@@ -65,7 +65,7 @@ class ChatItem extends StatelessWidget {
     late final ThemeData theme = Theme.of(context);
     late final Color textColor = isOwner
         ? theme.colorScheme.onSecondaryContainer
-        : theme.colorScheme.onSurfaceVariant;
+        : theme.colorScheme.onSurface;
     late final dynamic content = jsonDecode(item.content);
 
     Widget child = messageContent(
@@ -761,7 +761,7 @@ class ChatItem extends StatelessWidget {
             ),
             Divider(color: theme.colorScheme.primary.withValues(alpha: 0.05)),
             if ((content['text'] as String?)?.isNotEmpty == true)
-              SelectionText(content['text']),
+              Text(content['text']),
             if (modules != null && modules.isNotEmpty) ...[
               const SizedBox(height: 4),
               ...modules.map(
