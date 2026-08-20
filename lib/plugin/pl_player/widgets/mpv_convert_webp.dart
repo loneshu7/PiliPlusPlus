@@ -54,9 +54,7 @@ class MpvConvertWebp implements AnimatedWebpConverter {
         'ofopts': 'loop=0',
         'ovcopts': 'preset=${preset.flag}',
         if (enableHA) 'vo': 'gpu',
-        if (enableHA)
-          'hwdec':
-              '${Pref.hardwareDecoding},auto-copy', // transcode only support copy
+        if (enableHA) 'hwdec': '${Pref.hardwareDecoding},auto-copy', // transcode only support copy
       },
     );
     NativePlayer.setHeader(
