@@ -61,21 +61,19 @@ void main() {
   test(
     'ExoPlayer configuration derives gain and peak from measured loudnorm',
     () {
-      final resolution =
-          resolveExoAudioNormalization(
-                config: '2',
-                fallbackConfig: disabled,
-                volume: Volume(
-                  measuredI: -20,
-                  measuredLra: 8,
-                  measuredTp: -1,
-                  measuredThreshold: -30,
-                  targetOffset: 0,
-                  targetI: -16,
-                  targetTp: -1.5,
-                ),
-              )
-              as ExoAudioNormalizationConfiguration;
+      final resolution = resolveExoAudioNormalization(
+        config: '2',
+        fallbackConfig: disabled,
+        volume: Volume(
+          measuredI: -20,
+          measuredLra: 8,
+          measuredTp: -1,
+          measuredThreshold: -30,
+          targetOffset: 0,
+          targetI: -16,
+          targetTp: -1.5,
+        ),
+      ) as ExoAudioNormalizationConfiguration;
 
       expect(resolution.gain, closeTo(1.5848932, 0.000001));
       expect(resolution.peak, closeTo(0.8413951, 0.000001));
@@ -83,12 +81,10 @@ void main() {
   );
 
   test('ExoPlayer maps the dynaudnorm preset to dynamic normalization', () {
-    final resolution =
-        resolveExoAudioNormalization(
-              config: '1',
-              fallbackConfig: disabled,
-            )
-            as ExoAudioDynamicNormalizationConfiguration;
+    final resolution = resolveExoAudioNormalization(
+      config: '1',
+      fallbackConfig: disabled,
+    ) as ExoAudioDynamicNormalizationConfiguration;
 
     expect(resolution.targetRmsDb, -16);
     expect(resolution.peak, 1);
@@ -101,12 +97,10 @@ void main() {
   test(
     'ExoPlayer maps one-pass loudnorm without measurements to dynamic normalization',
     () {
-      final resolution =
-          resolveExoAudioNormalization(
-                config: '2',
-                fallbackConfig: '2',
-              )
-              as ExoAudioDynamicNormalizationConfiguration;
+      final resolution = resolveExoAudioNormalization(
+        config: '2',
+        fallbackConfig: '2',
+      ) as ExoAudioDynamicNormalizationConfiguration;
 
       expect(resolution.targetRmsDb, -16);
       expect(resolution.peak, closeTo(0.8413951, 0.000001));
@@ -117,48 +111,40 @@ void main() {
   );
 
   test('ExoPlayer supports a volume-only chain', () {
-    final resolution =
-        resolveExoAudioNormalization(
-              config: 'volume=0.8',
-              fallbackConfig: disabled,
-            )
-            as ExoAudioNormalizationConfiguration;
+    final resolution = resolveExoAudioNormalization(
+      config: 'volume=0.8',
+      fallbackConfig: disabled,
+    ) as ExoAudioNormalizationConfiguration;
 
     expect(resolution.gain, closeTo(0.8, 0.000001));
     expect(resolution.peak, 1);
   });
 
   test('ExoPlayer maps a highpass stage with frequency', () {
-    final resolution =
-        resolveExoAudioNormalization(
-              config: 'highpass=f=120,volume=0.8',
-              fallbackConfig: disabled,
-            )
-            as ExoAudioNormalizationConfiguration;
+    final resolution = resolveExoAudioNormalization(
+      config: 'highpass=f=120,volume=0.8',
+      fallbackConfig: disabled,
+    ) as ExoAudioNormalizationConfiguration;
 
     expect(resolution.highpassHz, 120);
     expect(resolution.gain, closeTo(0.8, 0.000001));
   });
 
   test('ExoPlayer maps a lowpass stage with frequency', () {
-    final resolution =
-        resolveExoAudioNormalization(
-              config: 'lowpass=f=1200,volume=0.8',
-              fallbackConfig: disabled,
-            )
-            as ExoAudioNormalizationConfiguration;
+    final resolution = resolveExoAudioNormalization(
+      config: 'lowpass=f=1200,volume=0.8',
+      fallbackConfig: disabled,
+    ) as ExoAudioNormalizationConfiguration;
 
     expect(resolution.lowpassHz, 1200);
     expect(resolution.gain, closeTo(0.8, 0.000001));
   });
 
   test('ExoPlayer maps a peaking equalizer stage', () {
-    final resolution =
-        resolveExoAudioNormalization(
-              config: 'equalizer=f=1000:t=q:w=1.2:g=4,volume=0.8',
-              fallbackConfig: disabled,
-            )
-            as ExoAudioNormalizationConfiguration;
+    final resolution = resolveExoAudioNormalization(
+      config: 'equalizer=f=1000:t=q:w=1.2:g=4,volume=0.8',
+      fallbackConfig: disabled,
+    ) as ExoAudioNormalizationConfiguration;
 
     expect(resolution.equalizerFrequencyHz, 1000);
     expect(resolution.equalizerGainDb, 4);
@@ -170,12 +156,10 @@ void main() {
 
   test('ExoPlayer maps shelf stages', () {
     for (final type in ['highshelf', 'lowshelf']) {
-      final resolution =
-          resolveExoAudioNormalization(
-                config: '$type=f=1000:w=1:g=4',
-                fallbackConfig: disabled,
-              )
-              as ExoAudioNormalizationConfiguration;
+      final resolution = resolveExoAudioNormalization(
+        config: '$type=f=1000:w=1:g=4',
+        fallbackConfig: disabled,
+      ) as ExoAudioNormalizationConfiguration;
 
       expect(resolution.equalizerBands.single.type, type);
       expect(
@@ -186,13 +170,10 @@ void main() {
   });
 
   test('ExoPlayer maps multiple peaking equalizer stages in chain order', () {
-    final resolution =
-        resolveExoAudioNormalization(
-              config:
-                  'equalizer=f=1000:t=q:w=1.2:g=4,equalizer=f=2000:t=q:w=0.7:g=-3',
-              fallbackConfig: disabled,
-            )
-            as ExoAudioNormalizationConfiguration;
+    final resolution = resolveExoAudioNormalization(
+      config: 'equalizer=f=1000:t=q:w=1.2:g=4,equalizer=f=2000:t=q:w=0.7:g=-3',
+      fallbackConfig: disabled,
+    ) as ExoAudioNormalizationConfiguration;
 
     expect(resolution.equalizerBands, hasLength(2));
     expect(resolution.equalizerBands.first.frequencyHz, 1000);
@@ -251,23 +232,19 @@ void main() {
   });
 
   test('ExoPlayer parses decibel volume stages', () {
-    final resolution =
-        resolveExoAudioNormalization(
-              config: 'volume=-3dB',
-              fallbackConfig: disabled,
-            )
-            as ExoAudioNormalizationConfiguration;
+    final resolution = resolveExoAudioNormalization(
+      config: 'volume=-3dB',
+      fallbackConfig: disabled,
+    ) as ExoAudioNormalizationConfiguration;
 
     expect(resolution.gain, closeTo(0.7079458, 0.000001));
   });
 
   test('ExoPlayer folds volume into the dynaudnorm target', () {
-    final resolution =
-        resolveExoAudioNormalization(
-              config: 'dynaudnorm=g=5:f=250:r=0.9:p=0.5,volume=0.5',
-              fallbackConfig: disabled,
-            )
-            as ExoAudioDynamicNormalizationConfiguration;
+    final resolution = resolveExoAudioNormalization(
+      config: 'dynaudnorm=g=5:f=250:r=0.9:p=0.5,volume=0.5',
+      fallbackConfig: disabled,
+    ) as ExoAudioDynamicNormalizationConfiguration;
 
     expect(resolution.targetRmsDb, closeTo(-22.0205999, 0.000001));
     expect(resolution.maxGain, 5);
@@ -275,56 +252,48 @@ void main() {
   });
 
   test('ExoPlayer folds volume into one-pass loudnorm', () {
-    final resolution =
-        resolveExoAudioNormalization(
-              config: 'loudnorm=I=-16:LRA=11:TP=-1.5,volume=0.8',
-              fallbackConfig: '2',
-            )
-            as ExoAudioDynamicNormalizationConfiguration;
+    final resolution = resolveExoAudioNormalization(
+      config: 'loudnorm=I=-16:LRA=11:TP=-1.5,volume=0.8',
+      fallbackConfig: '2',
+    ) as ExoAudioDynamicNormalizationConfiguration;
 
     expect(resolution.targetRmsDb, closeTo(-17.9382003, 0.000001));
     expect(resolution.peak, closeTo(0.8413951, 0.000001));
   });
 
   test('ExoPlayer folds volume into measured loudnorm gain', () {
-    final resolution =
-        resolveExoAudioNormalization(
-              config: 'loudnorm=I=-16:LRA=11:TP=-1.5,volume=0.8',
-              fallbackConfig: disabled,
-              volume: Volume(
-                measuredI: -20,
-                measuredLra: 8,
-                measuredTp: -1,
-                measuredThreshold: -30,
-                targetOffset: 0,
-                targetI: -16,
-                targetTp: -1.5,
-              ),
-            )
-            as ExoAudioNormalizationConfiguration;
+    final resolution = resolveExoAudioNormalization(
+      config: 'loudnorm=I=-16:LRA=11:TP=-1.5,volume=0.8',
+      fallbackConfig: disabled,
+      volume: Volume(
+        measuredI: -20,
+        measuredLra: 8,
+        measuredTp: -1,
+        measuredThreshold: -30,
+        targetOffset: 0,
+        targetI: -16,
+        targetTp: -1.5,
+      ),
+    ) as ExoAudioNormalizationConfiguration;
 
     expect(resolution.gain, closeTo(1.2679146, 0.000001));
     expect(resolution.peak, closeTo(0.8413951, 0.000001));
   });
 
   test('ExoPlayer reports the exact unsupported chain stage', () {
-    final resolution =
-        resolveExoAudioNormalization(
-              config: 'volume=0.8,compressor=threshold=0.5:ratio=2',
-              fallbackConfig: disabled,
-            )
-            as UnsupportedExoAudioNormalization;
+    final resolution = resolveExoAudioNormalization(
+      config: 'volume=0.8,compressor=threshold=0.5:ratio=2',
+      fallbackConfig: disabled,
+    ) as UnsupportedExoAudioNormalization;
 
     expect(resolution.unsupportedStage, 'compressor=threshold=0.5:ratio=2');
   });
 
   test('ExoPlayer rejects chains with multiple loudness stages', () {
-    final resolution =
-        resolveExoAudioNormalization(
-              config: 'loudnorm=I=-16,dynaudnorm=g=5',
-              fallbackConfig: '2',
-            )
-            as UnsupportedExoAudioNormalization;
+    final resolution = resolveExoAudioNormalization(
+      config: 'loudnorm=I=-16,dynaudnorm=g=5',
+      fallbackConfig: '2',
+    ) as UnsupportedExoAudioNormalization;
 
     expect(resolution.unsupportedStage, 'dynaudnorm=g=5');
   });
