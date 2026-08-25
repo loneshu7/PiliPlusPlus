@@ -4,8 +4,8 @@ import 'dart:ui';
 
 import 'package:PiliPlus/plugin/pl_player/exo_player/exo_player_controller.dart';
 import 'package:PiliPlus/plugin/pl_player/exo_player/exo_subtitle_cue.dart';
+import 'package:PiliPlus/plugin/pl_player/models/subtitle_style.dart';
 import 'package:flutter/material.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 
 /// Flutter subtitle overlay for the Media3 backend.
 ///
@@ -23,7 +23,7 @@ class ExoSubtitleView extends StatefulWidget {
   });
 
   final ExoPlayerController controller;
-  final SubtitleViewConfiguration configuration;
+  final PlayerSubtitleStyle configuration;
   final bool enableDragSubtitle;
   final ValueChanged<EdgeInsets>? onUpdatePadding;
 

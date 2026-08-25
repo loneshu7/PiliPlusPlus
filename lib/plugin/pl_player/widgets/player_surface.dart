@@ -2,7 +2,6 @@ import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/exo_player/exo_player_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 
 class PlPlayerSurface extends StatelessWidget {
   const PlPlayerSurface({
@@ -39,20 +38,14 @@ class PlPlayerSurface extends StatelessWidget {
         return SizedBox(width: width, height: height, child: child);
       }
 
-      final player = controller.videoController;
-      if (player == null) return const SizedBox.shrink();
-      return Transform.flip(
+      final playerView = controller.mpvPlayerView;
+      if (playerView == null) return const SizedBox.shrink();
+      return playerView.buildSurface(
+        fit: fit,
         flipX: flipX,
         flipY: flipY,
-        child: FittedBox(
-          fit: fit.boxFit,
-          alignment: alignment,
-          child: SimpleVideo(
-            controller: player,
-            fill: fill,
-            aspectRatio: fit.aspectRatio,
-          ),
-        ),
+        fill: fill,
+        alignment: alignment,
       );
     });
   }

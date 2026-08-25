@@ -1,4 +1,4 @@
-import 'dart:async' show StreamSubscription, Timer;
+import 'dart:async' show Timer;
 import 'dart:math' as math;
 
 import 'package:PiliPlus/common/widgets/dialog/simple_dialog_option.dart';
@@ -17,7 +17,6 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:media_kit/media_kit.dart';
 
 mixin BlockConfigMixin {
   late final pgcSkipType = Pref.pgcSkipType;
@@ -41,10 +40,6 @@ mixin BlockMixin on GetxController {
   ValueChanged<Duration>? _blockListener;
   ValueChanged<bool>? _pendingPlayingListener;
   bool get hasBlockListener => _blockListener != null;
-  final Map<ValueChanged<Duration>, StreamSubscription<Duration>>
-  _defaultBlockPositionSubscriptions = {};
-  final Map<ValueChanged<bool>, StreamSubscription<bool>>
-  _defaultBlockPlayingSubscriptions = {};
   late final List<SegmentModel> _segmentList = <SegmentModel>[];
   late final RxList<Segment> segmentProgressList = <Segment>[].obs;
 
@@ -53,35 +48,13 @@ mixin BlockMixin on GetxController {
   late final List<Object> listData = [];
 
   RxString? get videoLabel => null;
-  Player? get player => null;
-  bool get blockPlayerReady => player != null;
-  bool get blockPlayerPlaying => player?.state.playing ?? false;
+  bool get blockPlayerReady;
+  bool get blockPlayerPlaying;
 
-  void addBlockPositionListener(ValueChanged<Duration> listener) {
-    final player = this.player;
-    if (player != null) {
-      _defaultBlockPositionSubscriptions.remove(listener)?.cancel();
-      _defaultBlockPositionSubscriptions[listener] = player.stream.position
-          .listen(listener);
-    }
-  }
-
-  void removeBlockPositionListener(ValueChanged<Duration> listener) {
-    _defaultBlockPositionSubscriptions.remove(listener)?.cancel();
-  }
-
-  void addBlockPlayingListener(ValueChanged<bool> listener) {
-    final player = this.player;
-    if (player != null) {
-      _defaultBlockPlayingSubscriptions.remove(listener)?.cancel();
-      _defaultBlockPlayingSubscriptions[listener] = player.stream.playing
-          .listen(listener);
-    }
-  }
-
-  void removeBlockPlayingListener(ValueChanged<bool> listener) {
-    _defaultBlockPlayingSubscriptions.remove(listener)?.cancel();
-  }
+  void addBlockPositionListener(ValueChanged<Duration> listener);
+  void removeBlockPositionListener(ValueChanged<Duration> listener);
+  void addBlockPlayingListener(ValueChanged<bool> listener);
+  void removeBlockPlayingListener(ValueChanged<bool> listener);
 
   bool get autoPlay;
   int? get timeLength;

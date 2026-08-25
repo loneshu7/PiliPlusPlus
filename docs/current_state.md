@@ -1311,3 +1311,93 @@ the final audit artifact. The formal release baseline remains unchanged.
 - 远端 `2.1.9` 标签仍指向修复前的 `cedfa8f`，不能通过重跑旧 workflow 获得修复。后续正式
   发布必须使用更高的版本和 `versionCode` 创建新标签；GitHub Release 前仍应补上
   `tool/verify_release.ps1` 对每个 APK 的身份、ABI、签名和版本校验门禁。
+
+### 2026-08-25 本地无用代码清理
+
+- 从 `lib/main.dart` 对手写 Dart 文件执行 import/export/part 可达性审查，删除 11 个入口不可达文件：
+  废弃的综合搜索页面/控制器/卡片、未使用的 gRPC View 包装器、两个纯注释枚举、五个孤立模型
+  和未引用的 `PlaySpeed` 枚举；同步删除综合搜索 HTTP 方法、API 常量、结果模型、gRPC 常量及
+  已注释的旧调用残骸。清理后再次扫描，非生成手写 Dart 文件的不可达数量为 0。
+- 修正 3 处可直接替换的 `Color.alpha` 弃用调用。完整 `dart analyze` 保持 0 error、0 warning，
+  info 从 33 条降至 30 条；剩余提示主要位于项目内复制的 Flutter 文本编辑组件，包名提示涉及
+  全仓库 import/package 身份，不在本批做高风险机械改写。
+- 本批运行时代码净删除 670 行、增加 2 行，没有修改播放器后端、应用身份、版本或发布基线。
+  `dart format --output=none --set-exit-if-changed lib test` 通过（1321 文件、0 changed）；
+  完整 `flutter test --no-pub --concurrency=1` 通过 70/70；Android `:app:testDebugUnitTest`
+  和 Flutter Release 分 ABI 验证构建通过。构建产物仅用于本地源码验证，不作为新交付包，
+  未运行发布基线更新或真机回归。
+
+### 2026-08-25 项目范围与上游同步规则确认
+
+- 用户确认 `pili++` 相对上游只长期维护三类用户功能差异：Android mpv → Media3 ExoPlayer、
+  视频详情页下拉进入竖屏全屏/上滑退出交互、复用同一播放器会话的应用内小窗。除这三类外，
+  搜索、推荐、动态、评论、账号、收藏、下载、普通 UI 和其他通用产品功能均以上游实现为准。
+- 产品身份、Android-only CI、签名、发布校验和文档属于支撑性改造，不视为第四类产品功能。
+  后续同步默认接受上游普通功能和页面结构，只在新结构上重新挂接三类本地功能的最小 hook；
+  不用旧本地整文件覆盖上游，也不把上游功能误记为本项目自研。
+- `AGENTS.md` 已按该决定重构，集中定义三类差异边界、冲突面控制、临时同步分支、同步前重叠
+  文件审查、冲突处理优先级、按影响范围验证及清晰提交边界。当前具体 Git/发布/验收事实仍由
+  本文件和两份播放器专项文档维护。
+
+### 2026-08-25 README 现状同步
+
+- `README.md` 已按当前项目范围和事实重写：首页明确仅长期维护 Media3、视频页下拉竖屏全屏、
+  应用内小窗三类功能差异，其余通用产品能力归属上游；新增当前迁移状态、未移除 mpv 的明确
+  声明、上游冲突处理原则、专项文档导航和 Android-only 平台说明。
+- 本地构建说明已从过时的 Flutter 3.44.8 / Dart 3.12 更新为 `.fvmrc` 与 `pubspec.yaml` 当前固定的
+  Flutter 3.47.1 / Dart >=3.13.0，并补充项目 patch 流程、完整质量门禁、Android JVM 测试、
+  分 ABI Release 构建和 `tool/verify_release.ps1` 正式交付校验。
+- README 的 7 个本地 Markdown 链接均已核对存在，`git diff --check` 通过。本批只修改文档，
+  没有改变运行时代码、版本、发布基线或真机验收状态，因此未重复执行 Flutter/Android 测试。
+
+### 2026-08-25 Android mpv 移除 R1 公共类型解耦首组
+
+- 按 `docs/android_mpv_removal.md` 的依赖顺序开始 R1，没有越过仍待真机/产品决定闭环的 R0、R2
+  和 R4 去强制切换后端或删除包图。新增项目自有 `PlayerSubtitleStyle`；Media3 字幕渲染器、公共
+  播放器控制器及 Media3 字幕测试不再使用 `SubtitleViewConfiguration`，
+  `lib/plugin/pl_player/exo_player/**` 与对应测试已不含 `package:media_kit*`。
+- `SubtitleView`、`SimpleVideo`、`SubtitleViewConfiguration` 和直接调用 libmpv FFI 的
+  `MpvConvertWebp` 已收口到 `lib/plugin/pl_player/backends/mpv/`；公共字幕/Surface widget 不再
+  导入 `media_kit_video`。这只是非 Android mpv 边界的第一步，主控制器和独立音频中的 mpv
+  adapter 仍待后续 R1/R3 继续隔离。
+- SponsorBlock `BlockMixin` 已删除 `Player? get player` 和默认 media_kit stream 订阅，改为要求
+  宿主显式提供位置与播放状态的 add/remove 监听契约。视频页继续转发公共播放器监听；独立音频
+  继续在自身 adapter 内映射 Media3 或 mpv stream，行为语义未改变。
+- 固定 Flutter 3.47.1 / Dart 3.13.0 工具链验证：全量格式检查 1,324 个文件、0 changed；
+  `dart analyze` 为 0 error、0 warning、30 条既有 info；Media3 字幕定向测试 18/18、完整
+  `flutter test --no-pub --concurrency=1` 70/70、Android `:app:testDebugUnitTest` 均通过；
+  Flutter Release 分 ABI 构建成功，`git diff --check` 通过。
+- 本地验证 APK 为 `build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk`（SHA-256
+  `1D7DE74BFC4068FB131E4FBF54840A607F8AF3A5018E192FCAE3A5D260496399`）、
+  `app-arm64-v8a-release.apk`（`AEB5C134C519020BCB1D57F8FBEFC547139F3A7432F88446081E3891EB271BD7`）
+  和 `app-x86_64-release.apk`（`657B14A4FBD91EF93BFD0149CFDE9D438470B64620F08FDB34A7947C9BD7DECE`）。
+  这些包仅用于源码验证，没有提升版本、执行正式发布校验或更新发布基线。
+- 本批按 R1 预期没有修改依赖图；arm64 APK 复核仍包含 `libmpv.so` 和
+  `libmedia_kit_native_event_loop.so`，所以不能宣称 Android 已移除 mpv。普通文本、bitmap、
+  竖排字幕、字幕拖动、SponsorBlock 自动/手动跳过及 mpv/Media3 对照仍待准确源码真机回归。
+  下一批应继续完成 R1 的主播放器/独立音频 mpv adapter 隔离，或在具备真机条件时先验收本组；
+  R1 与 R2 Live Photo 真机通过前，不进入 Android 强制 Media3 和包图删除。
+
+### 2026-08-25 Android mpv 移除 R1 画面输出 adapter
+
+- R1 第二组新增项目自有 `MpvPlayerView`，统一封装非 Android mpv 的 `VideoController` 创建、
+  `VideoControllerConfiguration`、`SimpleVideo` Surface、`SubtitleView` 和第三方字幕配置转换。
+  `PlPlayerController` 现在只保存/公开 `MpvPlayerView`，不再公开 `Player` 或 `VideoController`；
+  mpv 底层 `Player` 暂时仍是主控制器的私有实现，留待后续 adapter 迁移。
+- 公共 `PlPlayerSurface` 与 `PlPlayerSubtitleLayer` 只调用项目自有 view handle，不再导入 mpv
+  adapter 或第三方类型。`media_kit_video`、`VideoController`、`SimpleVideo`、`SubtitleView` 和
+  `SubtitleViewConfiguration` 在 `lib/plugin/pl_player/**` 中现只存在于
+  `backends/mpv/mpv_player_view.dart`；Media3 adapter、公共 models/widgets 和测试保持为零。
+- 固定 Flutter 3.47.1 / Dart 3.13.0 工具链验证：格式检查 1,323 个文件、0 changed；
+  `dart analyze` 为 0 error、0 warning、30 条既有 info；完整
+  `flutter test --no-pub --concurrency=1` 70/70、Android `:app:testDebugUnitTest` 通过；
+  Flutter Release 分 ABI 构建成功，`git diff --check` 通过。
+- 当前本地验证 APK SHA-256：armeabi-v7a
+  `3DA2E404883B9C756E8C2472E3F27DBF9A93572B92A1F507C9461496051960CD`、arm64-v8a
+  `0FEA66E322004E2A18637DF5AFC1DC5125A8CD3E50E55CD86C96DF3F774D5EBB`、x86_64
+  `CC738CE6D736B8BE39A397EBFB838C95AA37B2132BD17BDF745E4C8A629597C1`。这些是未提升版本、
+  未执行正式发布校验的源码验证包，不更新发布基线。
+- 本组没有改变 Media3、mpv 播放行为或依赖图，也未执行真机回归；上一组的字幕/SponsorBlock
+  矩阵以及本组非 Android mpv 画面、字幕、翻转、比例和全屏仍待实际平台验证。下一 R1 组应把
+  主控制器中的私有 mpv `Player` 操作迁入 adapter，或先隔离规模较小的独立音频 mpv 后端；
+  Live Photo 仍按 R2 单独迁移，不能现在删除 Android mpv 包。

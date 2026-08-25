@@ -75,7 +75,6 @@ class AudioController extends GetxController
   final audioItem = Rxn<DetailItem>();
 
   bool _hasInit = false;
-  @override
   Player? player;
   ExoPlayerController? _exoPlayer;
   StreamSubscription<ExoPlayerEvent>? _exoSubscription;

@@ -4,10 +4,10 @@ import 'package:PiliPlus/plugin/pl_player/exo_player/exo_player_controller.dart'
 import 'package:PiliPlus/plugin/pl_player/exo_player/exo_subtitle_cue.dart';
 import 'package:PiliPlus/plugin/pl_player/exo_player/exo_subtitle_view.dart';
 import 'package:PiliPlus/plugin/pl_player/models/exo_player_failure.dart';
+import 'package:PiliPlus/plugin/pl_player/models/subtitle_style.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -111,7 +111,7 @@ void main() {
     await _pumpSubtitleView(
       tester,
       player,
-      configuration: const SubtitleViewConfiguration(
+      configuration: const PlayerSubtitleStyle(
         padding: EdgeInsets.fromLTRB(24, 0, 24, 40),
       ),
     );
@@ -717,7 +717,7 @@ Future<ExoPlayerController> _createTestPlayer(int id) async {
 Future<void> _pumpSubtitleView(
   WidgetTester tester,
   ExoPlayerController player, {
-  SubtitleViewConfiguration configuration = const SubtitleViewConfiguration(
+  PlayerSubtitleStyle configuration = const PlayerSubtitleStyle(
     style: TextStyle(fontSize: 20, color: Colors.white),
     padding: EdgeInsets.zero,
   ),

@@ -1,8 +1,8 @@
+import 'package:PiliPlus/plugin/pl_player/backends/mpv/mpv_convert_webp.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/exo_player/exo_convert_webp.dart';
 import 'package:PiliPlus/plugin/pl_player/models/animated_webp_converter.dart';
 import 'package:PiliPlus/plugin/pl_player/models/webp_preset.dart';
-import 'package:PiliPlus/plugin/pl_player/widgets/mpv_convert_webp.dart';
 import 'package:get/get_rx/get_rx.dart';
 
 AnimatedWebpConverter createAnimatedWebpConverter({
