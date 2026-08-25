@@ -15,6 +15,10 @@ An Exo migration is complete only when every MPV-backed user flow has one of:
 Hiding an MPV feature, silently doing nothing, or asking the user to switch back
 to MPV does not count as compatibility.
 
+The implementation plan for making Media3 the only Android backend and removing
+`libmpv.so` from the APK is maintained in `docs/android_mpv_removal.md`. This file
+remains the detailed compatibility and historical verification record.
+
 ## Architecture
 
 The player UI, controls, gestures, danmaku, subtitles, progress overlays, and

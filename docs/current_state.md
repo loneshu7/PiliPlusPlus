@@ -20,8 +20,8 @@
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
 - 已获取并合入的 `upstream/main`：`61c65a65cef0aa9993b16859d1e1f922e4557b3f`
   (`feat: show copy deviceInfo card (#2688)`)。
-- 当前分支相对 `upstream/main` 领先 106、落后 0，merge-base 为 `61c65a6`；相对
-  `origin/main` 领先 37、落后 0。提交数以实际 `git rev-list` 为准。
+- 当前分支相对 `upstream/main` 领先 108、落后 0，merge-base 为 `61c65a6`；相对
+  `origin/main` 领先 39、落后 0。提交数以实际 `git rev-list` 为准。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -1277,3 +1277,17 @@ the final audit artifact. The formal release baseline remains unchanged.
   `tool/release_baseline.json`，后续交付必须使用更高的 `versionCode`。
 - 当前剩余项是同一 Samsung 设备分别在 ExoPlayer/mpv、普通窗口/全屏中打开“播放信息”，
   核对弹窗可正常显示、复制字段可用且播放不中断；自动化通过不能替代该真机复测。
+
+### 2026-08-25 Android 完整移除 mpv 开发方案
+
+- 新增 `docs/android_mpv_removal.md`，以当前代码、依赖和已交付 arm64 APK 为事实基线，
+  定义 Android 完整替换 mpv 的产品、代码和构建产物三层门槛，并与历史兼容记录
+  `docs/android_exoplayer.md` 建立双向职责边界。
+- 当前 APK 实际仍包含 `lib/arm64-v8a/libmpv.so` 和
+  `lib/arm64-v8a/libmedia_kit_native_event_loop.so`。源码剩余直接依赖包括主播放器、独立音频、
+  Live Photo、SponsorBlock 默认监听、公共字幕/Surface、mpv 动态 WebP、应用初始化和设置项；
+  因此当前状态仍不能直接删除 mpv 包。
+- 文档把后续工作拆为 R0～R7：冻结基线与产品决定、公共类型解耦、Live Photo 迁移、Android
+  强制 Media3、关闭滤镜/解码/生命周期差异、删除 Android 原生 mpv 包、清理死代码与设置、
+  完整自动化/真机/签名交付。推荐下一批从项目自有字幕配置和 SponsorBlock 公共监听接口开始。
+- 本次仅新增和串联开发文档、核对仓库基线，没有修改运行时代码、版本、发布包或真机验收状态。
