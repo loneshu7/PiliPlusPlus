@@ -22,9 +22,11 @@
   (`fix: search apiType (#2697)`)。
 - 最新 R1 实现提交：`a4fd7e7715d38ca2b9c6da5ce727230229236474`
   (`refactor: isolate mpv subtitle and rendering types`)。
-- 完成本状态提交后，当前分支相对 `upstream/main` 领先 121、落后 0；相对
-  `origin/main@77249e4` 领先 18、落后 0；相对推送前跟踪分支
-  `origin/agent/upstream-e097549@9a00eac` 领先 11、落后 0。提交数以实际
+- 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
+  (`fix: use package version for update checks`)。
+- 完成本状态提交后，当前分支相对 `upstream/main` 领先 123、落后 0；相对
+  `origin/main@77249e4` 领先 20、落后 0；相对跟踪分支
+  `origin/agent/upstream-e097549@9a00eac` 领先 13、落后 0。提交数以实际
   `git rev-list` 为准。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
@@ -1441,3 +1443,31 @@ the final audit artifact. The formal release baseline remains unchanged.
 - 本批未执行 Android 真机回归。上游触及 Android 原生桥接、直播路由和设置页，仍需验证
   DocumentsProvider 开关及文件访问、Media3/mpv 点播与直播、设置 popup、下拉竖屏全屏、
   应用内小窗、系统 PiP 和前后台生命周期；自动化通过不能替代真机验收。
+
+### 2026-08-25 同步验证包版本元数据修复
+
+- 用户安装首轮 `...upstream-66c9c33-validation.apk` 后，关于页显示 `SNAPSHOT+1`，检查更新
+  错误提示 GitHub `2.1.8` 为新版。根因是首轮构建命令漏传
+  `--dart-define-from-file=pili_release.json`：APK Manifest 已是 `2.1.9+2026082501`，但 Flutter
+  `BuildConfig` 回落为 `SNAPSHOT+1`；既有发布脚本只校验 Manifest，因此未发现两层版本不一致。
+- 修复提交 `05f156218fc1ba086f1f63f27be2a2fb412c154a` 新增 `AppVersion`，关于页和更新
+  比较改为读取已安装应用的 `PackageInfo.version/buildNumber`。Dart define 继续用于 commit hash
+  和 build time 诊断，但即使本地或 IDE 构建漏传 define，也不会再因 `versionCode=1` 把旧版误判
+  为更新。新增测试覆盖 `2.1.9+2026082501` 的 package 元数据解析与非十进制 buildNumber 回退。
+- 修复源码重新执行：格式检查 1,325 个文件、0 changed；`dart analyze` 为 0 error、0 warning、
+  30 条既有 info；完整 Flutter 测试 72/72；Android `:app:testDebugUnitTest` 通过；
+  `git diff --check` 通过。最终构建前重新生成 `pili_release.json`，内容对应 versionName
+  `2.1.9`、versionCode `2026082501`、commit
+  `05f156218fc1ba086f1f63f27be2a2fb412c154a`，并带 `--dart-define-from-file` 重建三 ABI。
+- 最终三份验证 APK 均通过 `tool/verify_release.ps1 -AllowAlreadyDelivered`，applicationId
+  `com.shudo.plusplus`、应用名 `pili++`、版本、单一 ABI 和既有证书均正确；arm64 `libapp.so`
+  另确认嵌入 `2.1.9` 与准确修复提交：
+  - `build/app/outputs/flutter-apk/pili++-2.1.9-2026082501-armeabi-v7a-release-upstream-66c9c33-package-version-fix-validation.apk`
+    （SHA-256 `0299595D5E5152FA7E812F77200AC29A004E8D39B4670500831C8F77FF65F519`）；
+  - `build/app/outputs/flutter-apk/pili++-2.1.9-2026082501-arm64-v8a-release-upstream-66c9c33-package-version-fix-validation.apk`
+    （SHA-256 `BED1EC42683D75956613901C57F9F90C757362085DB04382294611B5C6513771`）；
+  - `build/app/outputs/flutter-apk/pili++-2.1.9-2026082501-x86_64-release-upstream-66c9c33-package-version-fix-validation.apk`
+    （SHA-256 `CC1BD33E171D370D9F7EA0093EF3CC6621411B7F7DEB643DE858629A22929AD0`）。
+- 首轮 `...upstream-66c9c33-validation.apk` 和中间 `...metadata-fix-validation.apk` 均已废弃，
+  不应继续安装或用于真机验收。最终包仍是同 versionCode 的同步验证包，不更新正式发布基线；
+  需在真机确认关于页显示 `2.1.9+2026082501`、手动检查更新不再提示 2.1.8。
