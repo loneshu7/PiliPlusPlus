@@ -1984,7 +1984,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
 
     final success =
         await showDialog<bool>(
-          context: Get.context!,
+          context: context,
           builder: (context) => AlertDialog(
             title: const Text('动态截图'),
             content: Column(

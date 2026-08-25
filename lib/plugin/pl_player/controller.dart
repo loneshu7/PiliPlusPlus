@@ -1213,11 +1213,8 @@ class PlPlayerController with BlockConfigMixin {
     return player;
   }
 
-  Map<String, String>? _buffer;
-  Map<String, String> get buffer =>
-      _buffer ??= Pref.initBuffer(_playbackSpeed.value);
-  Map<String, String>? _liveBuffer;
-  Map<String, String> get liveBuffer => _liveBuffer ??= Pref.initLiveBuffer();
+  late final buffer = Pref.initBuffer(_playbackSpeed.value);
+  late final liveBuffer = Pref.initLiveBuffer();
 
   int get _exoTargetBufferBytes {
     final bytes = Pref.bufferSize * 0x200000;
@@ -1275,17 +1272,14 @@ class PlPlayerController with BlockConfigMixin {
       }
     }
 
-    final Map<String, String> extras = {};
-
-    if (dataSource is FileSource) {
-      extras['cache'] = 'no';
-    } else {
-      if (isLive) {
-        extras.addAll(liveBuffer);
-      } else {
-        extras.addAll(buffer);
-      }
-    }
+    final Map<String, String> extras = {
+      if (dataSource is FileSource)
+        'cache': 'no'
+      else if (isLive)
+        ...liveBuffer
+      else
+        ...buffer,
+    };
 
     String video = dataSource.videoSource;
     if (dataSource.audioSource case final audio? when (audio.isNotEmpty)) {
@@ -1295,10 +1289,10 @@ class PlPlayerController with BlockConfigMixin {
         // dely_open need provide length
         video =
             ('edl://'
-            '!no_clip;!no_chapters;'
+            '!no_chapters;'
             // '!delay_open,media_type=video;'
             '%${isFileSource ? utf8.encode(video).length : video.length}%$video;'
-            '!new_stream;!no_clip;!no_chapters;'
+            '!new_stream;!no_chapters;'
             // '!delay_open,media_type=audio;'
             '%${isFileSource ? utf8.encode(audio).length : audio.length}%$audio');
       }
@@ -1731,7 +1725,10 @@ class PlPlayerController with BlockConfigMixin {
       if (kDebugMode)
         stream.log.listen(((PlayerLog log) {
           if (log.level == 'error' || log.level == 'fatal') {
-            Utils.reportError('${log.level}: ${log.prefix}: ${log.text}', null);
+            Utils.reportError(
+              '${log.level}: ${log.prefix}: ${log.text}\n${player.state.playlist}',
+              null,
+            );
           } else {
             debugPrint(log.toString());
           }
@@ -1784,7 +1781,9 @@ class PlPlayerController with BlockConfigMixin {
               event.startsWith("Can not open")) {
             return;
           }
-          Utils.reportError(event);
+          if (!kDebugMode) {
+            Utils.reportError('$event\n${player.state.playlist}');
+          }
           // SmartDialog.showToast('视频加载错误, $event');
         }
       }),
