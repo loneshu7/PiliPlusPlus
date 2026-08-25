@@ -6,6 +6,7 @@ import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/http/browser_ua.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
+import 'package:PiliPlus/utils/app_version.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -38,7 +39,8 @@ abstract final class Update {
         return;
       }
       final data = Map<String, dynamic>.from(responseData.first as Map);
-      if (!_hasUpdate(data)) {
+      final currentVersion = await AppVersion.load();
+      if (!_hasUpdate(data, currentVersion)) {
         if (!isAuto) {
           SmartDialog.showToast('已是最新版本');
         }
@@ -119,15 +121,18 @@ abstract final class Update {
     }
   }
 
-  static bool _hasUpdate(Map<String, dynamic> release) {
+  static bool _hasUpdate(
+    Map<String, dynamic> release,
+    AppVersion currentVersion,
+  ) {
     final releaseVersionCode = _releaseVersionCode(release);
     if (releaseVersionCode != null) {
-      return releaseVersionCode > BuildConfig.versionCode;
+      return releaseVersionCode > currentVersion.code;
     }
 
     final versionComparison = _compareSemanticVersions(
       '${release['tag_name'] ?? ''}',
-      BuildConfig.versionName,
+      currentVersion.name,
     );
     if (versionComparison != null) {
       return versionComparison > 0;

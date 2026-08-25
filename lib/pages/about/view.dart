@@ -13,6 +13,7 @@ import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/utils/accounts.dart';
+import 'package:PiliPlus/utils/app_version.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
@@ -40,8 +41,7 @@ class AboutPage extends StatefulWidget {
 }
 
 class _AboutPageState extends State<AboutPage> {
-  final currentVersion =
-      '${BuildConfig.versionName}+${BuildConfig.versionCode}';
+  final currentVersion = ''.obs;
   RxString cacheSize = ''.obs;
 
   late int _pressCount = 0;
@@ -50,10 +50,14 @@ class _AboutPageState extends State<AboutPage> {
   void initState() {
     super.initState();
     getCacheSize();
+    AppVersion.load().then((version) {
+      if (mounted) currentVersion.value = version.display;
+    });
   }
 
   @override
   void dispose() {
+    currentVersion.close();
     cacheSize.close();
     super.dispose();
   }
@@ -139,15 +143,17 @@ class _AboutPageState extends State<AboutPage> {
           ),
           ListTile(
             onTap: () => Update.checkUpdate(false),
-            onLongPress: () => Utils.copyText(currentVersion),
+            onLongPress: () => Utils.copyText(currentVersion.value),
             onSecondaryTap: PlatformUtils.isMobile
                 ? null
-                : () => Utils.copyText(currentVersion),
+                : () => Utils.copyText(currentVersion.value),
             title: const Text('当前版本'),
             leading: const Icon(Icons.commit_outlined),
-            trailing: Text(
-              currentVersion,
-              style: subTitleStyle,
+            trailing: Obx(
+              () => Text(
+                currentVersion.value.isEmpty ? '读取中…' : currentVersion.value,
+                style: subTitleStyle,
+              ),
             ),
           ),
           ListTile(
