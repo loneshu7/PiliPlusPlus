@@ -20,8 +20,11 @@
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
 - 已获取并合入的 `upstream/main`：`61c65a65cef0aa9993b16859d1e1f922e4557b3f`
   (`feat: show copy deviceInfo card (#2688)`)。
-- 当前分支相对 `upstream/main` 领先 114、落后 0，merge-base 为 `61c65a6`；相对
-  `origin/main@77249e4` 领先 3、落后 0。提交数以实际 `git rev-list` 为准。
+- 最新 R1 实现提交：`a4fd7e7715d38ca2b9c6da5ce727230229236474`
+  (`refactor: isolate mpv subtitle and rendering types`)。
+- 完成本状态提交后，当前分支相对 `upstream/main` 领先 118、落后 0，merge-base 为
+  `61c65a6`；相对 `origin/main@77249e4` 领先 7、落后 0；相对推送前跟踪分支
+  `origin/agent/upstream-e097549` 领先 10、落后 0。提交数以实际 `git rev-list` 为准。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
