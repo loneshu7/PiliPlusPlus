@@ -15,16 +15,17 @@
   (`chore: prepare 2.1.2 release`)
 - 最新功能快照：`0c647b51ae60defc39c6171e5ca9387e43e596d2`
   (`feat: retry decoder failures with software video fallback`)
-- 最新上游合并提交：`4c017f78fa11af4dc21c654a877b7c4af85c3558`
-  (`Merge upstream/main at 61c65a6`)。
+- 最新上游合并提交：`4d46b4fb6d53f0be8a6f69ca7e2a852ef2cc4176`
+  (`Merge upstream/main at 66c9c33`)。
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
-- 已获取并合入的 `upstream/main`：`61c65a65cef0aa9993b16859d1e1f922e4557b3f`
-  (`feat: show copy deviceInfo card (#2688)`)。
+- 已获取并合入的 `upstream/main`：`66c9c33839c419189702a3a556634c89e347f27b`
+  (`fix: search apiType (#2697)`)。
 - 最新 R1 实现提交：`a4fd7e7715d38ca2b9c6da5ce727230229236474`
   (`refactor: isolate mpv subtitle and rendering types`)。
-- 完成本状态提交后，当前分支相对 `upstream/main` 领先 118、落后 0，merge-base 为
-  `61c65a6`；相对 `origin/main@77249e4` 领先 7、落后 0；相对推送前跟踪分支
-  `origin/agent/upstream-e097549` 领先 10、落后 0。提交数以实际 `git rev-list` 为准。
+- 完成本状态提交后，当前分支相对 `upstream/main` 领先 121、落后 0；相对
+  `origin/main@77249e4` 领先 18、落后 0；相对推送前跟踪分支
+  `origin/agent/upstream-e097549@9a00eac` 领先 11、落后 0。提交数以实际
+  `git rev-list` 为准。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -1404,3 +1405,39 @@ the final audit artifact. The formal release baseline remains unchanged.
   矩阵以及本组非 Android mpv 画面、字幕、翻转、比例和全屏仍待实际平台验证。下一 R1 组应把
   主控制器中的私有 mpv `Player` 操作迁入 adapter，或先隔离规模较小的独立音频 mpv 后端；
   Live Photo 仍按 R2 单独迁移，不能现在删除 Android mpv 包。
+
+### 2026-08-25 上游 8 提交同步至 66c9c33
+
+- 从已推送且工作区干净的 `agent/upstream-e097549@9a00eac` 创建
+  `sync/upstream-20260825`，fetch 后确认本地领先 118、上游领先 8，merge-base 为
+  `61c65a6`。上游 8 个提交改动 33 个文件、增加 618 行、删除 323 行；合并提交为
+  `4d46b4fb6d53f0be8a6f69ca7e2a852ef2cc4176`。
+- Git 没有文本冲突；语义重叠文件为 Android Manifest/AndroidHelper、直播 controller、
+  extra/play settings、bindings、storage key/pref 共 8 个。普通弹窗→popup、评论排序、
+  发布过渡、投票、WebView、CDN 测试与搜索 apiType 修复均接受上游实现；本地 Media3、
+  下拉竖屏全屏、应用内小窗、PiP、打开直播前释放旧小窗和 `pili++` 身份均保留。
+- 上游新增 Android DocumentsProvider 时假设 namespace/applicationId 都是
+  `com.example.piliplus`。本项目 namespace/applicationId 为 `com.shudo.plusplus`、Java/Kotlin
+  package 仍为 `com.example.piliplus`，因此提交
+  `b10b46580bb4c1d6d6d8198cd0913fc898cba2a4` 将 provider 类名改为全限定
+  `com.example.piliplus.BiliDocumentsProvider`，authority 改为
+  `${applicationId}.MTDataFilesProvider`。arm64 APK 的解析 manifest 确认最终 authority 为
+  `com.shudo.plusplus.MTDataFilesProvider`，DEX 确认 provider 类实际存在。
+- 固定 Flutter 3.47.1 / Dart 3.13.0、JDK 17 和 Android SDK 验证：格式检查 1,323 个文件、
+  0 changed；`dart analyze` 为 0 error、0 warning、30 条既有 info；完整
+  `flutter test --no-pub --concurrency=1` 70/70；Android `:app:testDebugUnitTest` 与 Flutter
+  Release 分 ABI 构建通过；`git diff --check` 通过。
+- 三份同步验证 APK 均通过 `tool/verify_release.ps1 -AllowAlreadyDelivered`，确认 applicationId
+  `com.shudo.plusplus`、应用名 `pili++`、versionName `2.1.9`、versionCode `2026082501`、
+  单一目标 ABI 和证书 SHA-256
+  `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C`：
+  - `build/app/outputs/flutter-apk/pili++-2.1.9-2026082501-armeabi-v7a-release-upstream-66c9c33-validation.apk`
+    （SHA-256 `374E4004D6D55979CC0D6F4FA4FAB07D56BC43FC38A8AA7B8C0EFCF577E53A63`）；
+  - `build/app/outputs/flutter-apk/pili++-2.1.9-2026082501-arm64-v8a-release-upstream-66c9c33-validation.apk`
+    （SHA-256 `9868159D47D45D2D36AE85A9C08580116F17030CA17276B90ABD22EA0E8E8934`）；
+  - `build/app/outputs/flutter-apk/pili++-2.1.9-2026082501-x86_64-release-upstream-66c9c33-validation.apk`
+    （SHA-256 `C4C8F2B0ED9D94104B4F0423AB3419DEA5F87F58ED0C5E667CD9ABCC6F3F6164`）。
+  这些包仅用于同步后源码审计，不更新正式发布基线。
+- 本批未执行 Android 真机回归。上游触及 Android 原生桥接、直播路由和设置页，仍需验证
+  DocumentsProvider 开关及文件访问、Media3/mpv 点播与直播、设置 popup、下拉竖屏全屏、
+  应用内小窗、系统 PiP 和前后台生命周期；自动化通过不能替代真机验收。
