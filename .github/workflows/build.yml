@@ -99,10 +99,6 @@ jobs:
             - name: Install dependencies
               run: flutter pub get
 
-            - name: Refresh media_kit native checksums
-              shell: pwsh
-              run: tool/patch_media_kit_checksums.ps1
-
             - name: Write key
               if: github.event_name != 'pull_request'
               env:
