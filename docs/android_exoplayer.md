@@ -1815,3 +1815,48 @@ files, software/hardware switching, decoder-failure fallback, source and part
 switches, seeking, background, mini-player, PiP, rotation, and multiple codec
 vendors. Until that matrix is replayed, this item is implemented but pending
 device acceptance.
+
+
+### 2026-08-25 player-info dialog localization fix
+
+A Samsung SM-S9180 running Android 16 / SDK 36 reported
+`MaterialLocalizations.of` failing with a null-check exception when opening the
+backend-neutral player-info dialog from the video settings sheet. The stack trace
+ended in Flutter's `DialogRoute`; Media3 playback and native decoder state were not
+involved.
+
+The app now uses `material_ui` after the upstream Material UI migration and
+registers `material_ui`'s `GlobalMaterialLocalizations.delegates`. The shared
+`player_info_dialog.dart` was the only remaining file that imported Flutter's
+separate `package:flutter/material.dart` and therefore invoked Flutter's incompatible
+`showDialog`/`MaterialLocalizations` type. It now imports `material_ui.dart`, keeping
+the existing `PlayerInfoEntry` backend-neutral data and copy behavior unchanged.
+
+A widget regression test builds the same `material_ui MaterialApp` localization
+tree used by the application, opens the player-info dialog, and verifies that no
+exception is raised and a Media3 decoder entry is displayed. The focused test passes
+1/1. Formatting checks cover 1,332 files with no changes; complete Dart analysis has
+0 errors and 0 warnings (33 pre-existing info diagnostics); the complete Flutter suite
+passes 70/70; Android `:app:testDebugUnitTest` and the arm64 Release build pass.
+
+The first Release attempt after regenerating dependencies failed because the fixed
+`PUB_CACHE` copy of `material_ui` did not yet contain the repository compatibility
+patches. Running the existing `lib/scripts/patch.ps1 -platform android` build step
+applied those patches, after which the unchanged source built successfully. This was a
+toolchain preparation failure rather than an application source or test failure.
+
+Runtime implementation commit `15f9e2e5bddcead114945a5f76494cdc1374212c`
+contains the dialog fix, regression test, and version bump. The final APK was rebuilt
+with CI-equivalent `pili.hash` / `pili.time` metadata for that commit. The arm64
+device-test artifact is
+`build/app/outputs/flutter-apk/pili++-2.1.9-2026082501-arm64-v8a-release-player-info-dialog-fix-final.apk`
+(24,958,592 bytes, SHA-256
+`CBBA2B07BA3EEE1F048C262D059474AAFA1D0308865568365D04CB0DBB41D0B6`).
+Release verification confirms application ID `com.shudo.plusplus`, label `pili++`,
+version `2.1.9+2026082501`, only `arm64-v8a`, and certificate SHA-256
+`775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C`.
+The delivery updates `tool/release_baseline.json`; later artifacts must use a higher
+Android `versionCode`.
+A fresh Samsung device check is still required for both ExoPlayer and mpv player-info
+dialogs in windowed and full-screen modes; automated verification does not close that
+device-acceptance item.
