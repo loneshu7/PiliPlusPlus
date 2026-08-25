@@ -2,7 +2,6 @@ import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/exo_player/exo_subtitle_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 
 class PlPlayerSubtitleLayer extends StatelessWidget {
   const PlPlayerSubtitleLayer({required this.controller, super.key});
@@ -24,10 +23,9 @@ class PlPlayerSubtitleLayer extends StatelessWidget {
         );
       }
 
-      final player = controller.videoController;
-      if (player == null) return const SizedBox.shrink();
-      return SubtitleView(
-        controller: player,
+      final playerView = controller.mpvPlayerView;
+      if (playerView == null) return const SizedBox.shrink();
+      return playerView.buildSubtitle(
         configuration: configuration,
         enableDragSubtitle: controller.enableDragSubtitle,
         onUpdatePadding: controller.onUpdatePadding,

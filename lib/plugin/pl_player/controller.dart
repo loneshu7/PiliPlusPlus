@@ -19,6 +19,7 @@ import 'package:PiliPlus/pages/danmaku/danmaku_model.dart';
 import 'package:PiliPlus/pages/setting/models/play_settings.dart'
     show kMaxVolume;
 import 'package:PiliPlus/pages/sponsor_block/block_mixin.dart';
+import 'package:PiliPlus/plugin/pl_player/backends/mpv/mpv_player_view.dart';
 import 'package:PiliPlus/plugin/pl_player/exo_player/exo_player_controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/audio_normalization_filter.dart';
 import 'package:PiliPlus/plugin/pl_player/models/data_source.dart';
@@ -33,6 +34,7 @@ import 'package:PiliPlus/plugin/pl_player/models/player_media_track.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/plugin/pl_player/models/subtitle_source.dart';
+import 'package:PiliPlus/plugin/pl_player/models/subtitle_style.dart';
 import 'package:PiliPlus/plugin/pl_player/models/video_fit_type.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/captured_frame.dart';
@@ -66,7 +68,6 @@ import 'package:get/get.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:native_device_orientation/native_device_orientation.dart';
 import 'package:path/path.dart' as path;
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
@@ -77,13 +78,13 @@ typedef PlayCallback = Future<void>? Function();
 
 class PlPlayerController with BlockConfigMixin {
   Player? _videoPlayerController;
-  VideoController? _videoController;
+  MpvPlayerView? _mpvPlayerView;
   ExoPlayerController? _exoPlayerController;
   StreamSubscription<ExoPlayerEvent>? _exoSubscription;
 
   bool get useExoPlayer => Platform.isAndroid && Pref.useExoPlayer;
   bool get playerReady =>
-      useExoPlayer ? _exoPlayerController != null : _videoController != null;
+      useExoPlayer ? _exoPlayerController != null : _mpvPlayerView != null;
   ExoPlayerController? get exoPlayerController => _exoPlayerController;
 
   List<PlayerMediaTrack> tracksFor(PlayerMediaTrackType type) {
@@ -358,23 +359,23 @@ class PlPlayerController with BlockConfigMixin {
 
   int get positionInMilliseconds => useExoPlayer
       ? _exoPlayerController?.state.position.inMilliseconds ?? 0
-      : videoPlayerController?.state.position.inMilliseconds ?? 0;
+      : _videoPlayerController?.state.position.inMilliseconds ?? 0;
 
   Duration get currentPosition => useExoPlayer
       ? _exoPlayerController?.state.position ?? Duration.zero
-      : videoPlayerController?.state.position ?? Duration.zero;
+      : _videoPlayerController?.state.position ?? Duration.zero;
 
   Duration get currentDuration => useExoPlayer
       ? _exoPlayerController?.state.duration ?? Duration.zero
-      : videoPlayerController?.state.duration ?? Duration.zero;
+      : _videoPlayerController?.state.duration ?? Duration.zero;
 
   Size get naturalVideoSize {
     final stateWidth = useExoPlayer
         ? _exoPlayerController?.state.width ?? 0
-        : videoPlayerController?.state.width ?? 0;
+        : _videoPlayerController?.state.width ?? 0;
     final stateHeight = useExoPlayer
         ? _exoPlayerController?.state.height ?? 0
-        : videoPlayerController?.state.height ?? 0;
+        : _videoPlayerController?.state.height ?? 0;
     return Size(
       (stateWidth > 0 ? stateWidth : width ?? 16).toDouble(),
       (stateHeight > 0 ? stateHeight : height ?? 9).toDouble(),
@@ -383,7 +384,7 @@ class PlPlayerController with BlockConfigMixin {
 
   bool get isPlaying => useExoPlayer
       ? _exoPlayerController?.state.playing ?? false
-      : videoPlayerController?.state.playing ?? false;
+      : _videoPlayerController?.state.playing ?? false;
 
   bool get playWhenReady =>
       useExoPlayer ? _exoPlayerController?.playWhenReady ?? false : isPlaying;
@@ -467,11 +468,7 @@ class PlPlayerController with BlockConfigMixin {
   // 长按倍速
   double get longPressSpeed => _longPressSpeed.value;
 
-  /// [videoPlayerController] instance of Player
-  Player? get videoPlayerController => _videoPlayerController;
-
-  /// [videoController] instance of Player
-  VideoController? get videoController => _videoController;
+  MpvPlayerView? get mpvPlayerView => _mpvPlayerView;
 
   bool isMuted = false;
   double _audioFocusGain = 1;
@@ -538,7 +535,7 @@ class PlPlayerController with BlockConfigMixin {
     }
 
     final Size size;
-    final state = videoPlayerController!.state;
+    final state = _videoPlayerController!.state;
     int width = state.width;
     int height = state.height;
     if (width == 0) {
@@ -588,10 +585,10 @@ class PlPlayerController with BlockConfigMixin {
     if (playerReady) {
       final stateWidth = useExoPlayer
           ? _exoPlayerController?.state.width ?? 0
-          : videoPlayerController?.state.width ?? 0;
+          : _videoPlayerController?.state.width ?? 0;
       final stateHeight = useExoPlayer
           ? _exoPlayerController?.state.height ?? 0
-          : videoPlayerController?.state.height ?? 0;
+          : _videoPlayerController?.state.height ?? 0;
       PageUtils.enterPip(
         autoEnter: autoEnter,
         width: stateWidth == 0 ? width : stateWidth,
@@ -716,11 +713,11 @@ class PlPlayerController with BlockConfigMixin {
         : Colors.black.withValues(alpha: subtitleBgOpacity),
   );
 
-  late final Rx<SubtitleViewConfiguration> subtitleConfig = getSubConfig.obs;
+  late final Rx<PlayerSubtitleStyle> subtitleConfig = getSubConfig.obs;
 
-  SubtitleViewConfiguration get getSubConfig {
+  PlayerSubtitleStyle get getSubConfig {
     final subTitleStyle = this.subTitleStyle;
-    return SubtitleViewConfiguration(
+    return PlayerSubtitleStyle(
       style: subTitleStyle,
       strokeStyle: subtitleBgOpacity == 0
           ? subTitleStyle.copyWith(
@@ -1069,7 +1066,7 @@ class PlPlayerController with BlockConfigMixin {
         _videoPlayerController?.dispose();
         _exoPlayerController?.dispose();
         _videoPlayerController = null;
-        _videoController = null;
+        _mpvPlayerView = null;
         _exoPlayerController = null;
         return;
       }
@@ -1195,15 +1192,12 @@ class PlPlayerController with BlockConfigMixin {
       ),
     );
 
-    assert(_videoController == null);
+    assert(_mpvPlayerView == null);
 
-    _videoController = await VideoController.create(
+    _mpvPlayerView = await MpvPlayerView.create(
       player,
-      configuration: VideoControllerConfiguration(
-        enableHardwareAcceleration: hwdec != null,
-        androidAttachSurfaceAfterVideoParameters: false,
-        hwdec: hwdec,
-      ),
+      enableHardwareAcceleration: hwdec != null,
+      hwdec: hwdec,
     );
 
     player.setMediaHeader(userAgent: BrowserUa.pc, referer: HttpString.baseUrl);
@@ -1263,7 +1257,7 @@ class PlPlayerController with BlockConfigMixin {
         _removeListeners();
         player.dispose();
         player = null;
-        _videoController = null;
+        _mpvPlayerView = null;
         return;
       }
       _videoPlayerController = player;
@@ -1667,7 +1661,7 @@ class PlPlayerController with BlockConfigMixin {
           element(playing ? .playing : .paused);
         }
 
-        final seconds = videoPlayerController!.state.position.inSeconds;
+        final seconds = _videoPlayerController!.state.position.inSeconds;
         if (seconds != 0) {
           makeHeartBeat(seconds, type: .status);
         }
@@ -2090,7 +2084,7 @@ class PlPlayerController with BlockConfigMixin {
   bool get isCompleted =>
       (useExoPlayer
           ? _exoPlayerController?.state.completed ?? false
-          : videoPlayerController?.state.completed ?? false) ||
+          : _videoPlayerController?.state.completed ?? false) ||
       durationInMilliseconds - positionInMilliseconds <= 50;
 
   // 双击播放、暂停
@@ -2442,7 +2436,7 @@ class PlPlayerController with BlockConfigMixin {
     _videoPlayerController?.dispose();
     _exoPlayerController?.dispose();
     _videoPlayerController = null;
-    _videoController = null;
+    _mpvPlayerView = null;
     _exoPlayerController = null;
     _instance = null;
     videoPlayerServiceHandler?.clear();
@@ -2531,7 +2525,7 @@ class PlPlayerController with BlockConfigMixin {
         );
       }
     }
-    final player = videoPlayerController;
+    final player = _videoPlayerController;
     if (player == null) {
       return const PlayerFeatureUnavailable('播放器尚未就绪');
     }

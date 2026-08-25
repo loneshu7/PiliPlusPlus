@@ -17,40 +17,6 @@ abstract class SearchNumData<T> {
   List<T>? list;
 }
 
-class SearchAllData extends SearchNumData {
-  SearchAllData({
-    super.numResults,
-    super.list,
-  });
-
-  SearchAllData.fromJson(Map<String, dynamic> json) {
-    numResults = (json['numResults'] as num?)?.toInt();
-    if (json['result'] case List result) {
-      final isRefresh = json['page'] == 1;
-      list = [];
-      for (final item in result) {
-        if (item['data'] case List data) {
-          switch (item['result_type']) {
-            case 'media_bangumi' || 'media_bangumi':
-              if (isRefresh) {
-                list!.addAll(data.map((e) => SearchPgcItemModel.fromJson(e)));
-              }
-              break;
-            case 'bili_user':
-              if (isRefresh) {
-                list!.addAll(data.map((e) => SearchUserItemModel.fromJson(e)));
-              }
-              break;
-            case 'video':
-              list!.addAll(data.map((e) => SearchVideoItemModel.fromJson(e)));
-              break;
-          }
-        }
-      }
-    }
-  }
-}
-
 class SearchVideoData extends SearchNumData<SearchVideoItemModel> {
   SearchVideoData({
     super.numResults,
