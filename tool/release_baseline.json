@@ -11,9 +11,9 @@
     "x86_64"
   ],
   "lastDelivered": {
-    "versionName": "2.1.8",
-    "versionCode": 2026081004,
-    "fileName": "pili++-2.1.8-2026081004-universal-release-pull-resize-v7-final.apk",
-    "sha256": "6748CDFF54C5B3C0BE7C2B5369AEE99CEF4486D838E250EDD2C3F43C6E3E40DA"
+    "versionName": "2.1.9",
+    "versionCode": 2026082501,
+    "fileName": "pili++-2.1.9-2026082501-arm64-v8a-release-player-info-dialog-fix-final.apk",
+    "sha256": "CBBA2B07BA3EEE1F048C262D059474AAFA1D0308865568365D04CB0DBB41D0B6"
   }
 }

@@ -37,15 +37,15 @@ void main() {
     final renderObject = tester.renderObject<RenderRefreshLayout>(
       find.byType(RefreshLayout),
     );
-    expect(renderObject.indicator.hasSize, isTrue);
-    expect(renderObject.indicator.size, Size.zero);
+    expect(renderObject.indicator!.hasSize, isTrue);
+    expect(renderObject.indicator!.size, Size.zero);
     expect(tester.takeException(), isNull);
 
     scale.value = 1;
     position.value = 1;
     await tester.pump();
 
-    expect(renderObject.indicator.size, const Size.square(49));
+    expect(renderObject.indicator!.size, const Size.square(49));
     expect(tester.takeException(), isNull);
     semantics.dispose();
   });

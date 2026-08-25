@@ -20,14 +20,14 @@ class RefreshLayout
   final Animation<double> scale;
   final Animation<double> position;
   final double displacement;
-  final Widget indicator;
+  final Widget? indicator;
   final Widget body;
 
   @override
   Iterable<RefreshType> get slots => RefreshType.values;
 
   @override
-  Widget childForSlot(slot) => switch (slot) {
+  Widget? childForSlot(slot) => switch (slot) {
     .indicator => indicator,
     .body => body,
   };
@@ -112,7 +112,7 @@ class RenderRefreshLayout extends RenderBox
     super.dispose();
   }
 
-  RenderBox get indicator => childForSlot(.indicator)!;
+  RenderBox? get indicator => childForSlot(.indicator);
   RenderBox get body => childForSlot(.body)!;
 
   @override
@@ -130,6 +130,7 @@ class RenderRefreshLayout extends RenderBox
 
   void _layoutIndicator() {
     final indicator = this.indicator;
+    if (indicator == null) return;
     final scaleSize = kIndicatorSize * scaleFactor;
     indicator.layout(
       BoxConstraints.tightFor(width: scaleSize, height: scaleSize),
@@ -152,7 +153,8 @@ class RenderRefreshLayout extends RenderBox
     }
 
     doPaint(body);
-    if (heightFactor > 0 && scaleFactor > 0) {
+    final indicator = this.indicator;
+    if (indicator != null && heightFactor > 0 && scaleFactor > 0) {
       final indicatorOffset = getOffset(indicator);
       if (indicatorOffset.dy > 0) {
         context.paintChild(indicator, indicatorOffset + offset);

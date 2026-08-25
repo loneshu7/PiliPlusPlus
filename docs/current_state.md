@@ -1,6 +1,6 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-08-20 +08:00
+> 最后核对：2026-08-25 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
@@ -15,13 +15,13 @@
   (`chore: prepare 2.1.2 release`)
 - 最新功能快照：`0c647b51ae60defc39c6171e5ca9387e43e596d2`
   (`feat: retry decoder failures with software video fallback`)
-- 最新上游合并提交：`c0f25ca93521daba869fc449937fe2d3ef719720`
-  (`Merge remote-tracking branch 'upstream/main' into agent/upstream-e097549`)。
+- 最新上游合并提交：`4c017f78fa11af4dc21c654a877b7c4af85c3558`
+  (`Merge upstream/main at 61c65a6`)。
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
-- 已获取并合入的 `upstream/main`：`e09754991e1d2395d1011421227772b6ba185ff0`
-  (`fix ios bottom sheet patch`)。
-- 当前分支相对 `upstream/main` 领先 104、落后 0，merge-base 为 `e097549`；相对
-  `origin/main` 领先 7、落后 0。提交数以实际 `git rev-list` 为准。
+- 已获取并合入的 `upstream/main`：`61c65a65cef0aa9993b16859d1e1f922e4557b3f`
+  (`feat: show copy deviceInfo card (#2688)`)。
+- 当前分支相对 `upstream/main` 领先 106、落后 0，merge-base 为 `61c65a6`；相对
+  `origin/main` 领先 37、落后 0。提交数以实际 `git rev-list` 为准。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -43,15 +43,16 @@
 
 ## 最近一次交付
 
-- 版本：`2.1.8`
-- versionCode：`2026081004`
-- ABI：universal (`arm64-v8a`、`armeabi-v7a`、`x86_64`)
-- 文件名：`pili++-2.1.8-2026081004-universal-release-pull-resize-v7-final.apk`
+- 版本：`2.1.9`
+- versionCode：`2026082501`
+- ABI：`arm64-v8a`
+- 文件名：`pili++-2.1.9-2026082501-arm64-v8a-release-player-info-dialog-fix-final.apk`
 - APK SHA-256：
-  `6748CDFF54C5B3C0BE7C2B5369AEE99CEF4486D838E250EDD2C3F43C6E3E40DA`
-- 2026-08-10 14:36 已生成并交付播放页/竖屏全屏连续缩放动画通用 APK，尚未发布 GitHub
-  Release；该 APK 已通过 `tool/verify_release.ps1` 的应用身份、版本、ABI 和签名校验。
-  2026-08-15 用户确认视频页下拉、竖屏全屏连续缩放和 mpv/ExoPlayer 手势一致性验收完成。
+  `CBBA2B07BA3EEE1F048C262D059474AAFA1D0308865568365D04CB0DBB41D0B6`
+- 2026-08-25 11:46 已生成并交付播放信息弹窗本地化修复 arm64 Release APK；该包通过
+  `tool/verify_release.ps1` 的应用身份、版本、ABI 和签名校验，机器发布基线已同步。
+- 该包用于 Samsung SM-S9180 / Android 16 同机复测；ExoPlayer/mpv、普通窗口/全屏的
+  播放信息弹窗、字段复制和播放不中断仍待用户真机确认，尚未发布 GitHub Release。
 
 ## 已确认的产品决定
 
@@ -1191,3 +1192,88 @@ the final audit artifact. The formal release baseline remains unchanged.
   系统 PiP 和前后台场景在合并后准确源码状态上的真机复核。
 - 分支提交 `b326cfa` 的 PR Run `32369487886` 与 push Run `32369463689` 均成功：
   两次 Flutter quality 和两次 Android 构建全部通过；PR #5 状态为 `CLEAN`、`MERGEABLE`。
+
+### 2026-08-21 本地生成物清理
+
+- 用户确认执行完整生成物清理。已删除 `build/`、`.dart_tool/`、Android Gradle/Kotlin
+  项目缓存、各平台 Flutter ephemeral/generated plugin 文件、`.flutter-plugins-dependencies`
+  和 `pili_release.json`；其中包括项目目录内当时存在的 17 个 APK。
+- 清理前项目目录约 12 GB，清理后约 42 MB；复核未发现残留 APK、AAB 或 APKS 文件。
+- 源码、文档和 Git 历史未删除。Release 签名证书、`android/key.properties`、
+  `android/local.properties`、Gradle wrapper 脚本及 JAR 已逐项确认保留。
+- 本次只清理可再生成内容，未修改播放器实现，也未重新运行测试或构建。后续执行
+  `flutter pub get`、测试或 Android 构建时，会按需重新生成依赖和构建目录。
+
+### 2026-08-24 上游 28 提交同步
+
+- 从本地 `7fad0793835888e683cab9b3f5e3ec9ad320268f` fetch 上游，
+  `upstream/main` 由 `e097549` 前进到 `61c65a65cef0aa9993b16859d1e1f922e4557b3f`；
+  同步前本地领先 104、上游领先 28，merge-base 为 `e097549`。上游本批改动 67 个文件，
+  与本地 102 个改动文件重叠 18 个，实际文本冲突 8 个；合并提交为
+  `4c017f78fa11af4dc21c654a877b7c4af85c3558`。
+- 冲突已按后端中立和产品身份边界人工处理：刷新布局同时保留本地 `displacement`、
+  Samsung Android 16 semantics 合法布局与上游 nullable indicator；视频字幕保留
+  `PlayerSubtitleSource`/Media3 公共接口并接入上游 `getSubtitles`；播放信息、轨道选择、
+  仅音频和截图继续走 mpv/ExoPlayer 公共层，没有恢复业务层对 `NativePlayer` 的直接依赖；
+  打开新视频或直播前继续释放旧应用内小窗，同时采用上游路由助手；版本保留
+  `2.1.8+2026081004`，applicationId/namespace 保持 `com.shudo.plusplus`。
+- 已接入上游字体设置、Wi-Fi/蜂窝网络独立首选编码、二级评论排序、PBP 请求修复、
+  `no_clip` 清理、依赖升级及其余 UI/业务修复。`lib/scripts/patch.ps1` 额外支持优先读取
+  `PUB_CACHE`，并在 Windows 本地 Android 构建时回退 `%LOCALAPPDATA%/Pub/Cache`；CI 默认
+  路径与 Android-only 主工作流保持不变。
+- 固定 Flutter 3.47.1 工具链验证通过：`dart format lib test` 检查 1331 个文件、0 changed；
+  `dart analyze` 为 0 error、0 warning、33 条既有 info；
+  `flutter test --no-pub --concurrency=1` 通过 69/69；Android
+  `:app:testDebugUnitTest` 与 Flutter Release 分 ABI 构建成功。
+- 三份同步验证 APK 均通过 `tool/verify_release.ps1 -AllowAlreadyDelivered`，确认
+  applicationId `com.shudo.plusplus`、应用名 `pili++`、versionName `2.1.8`、versionCode
+  `2026081004`、单一目标 ABI 和证书 SHA-256
+  `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C`：
+  - `build/app/outputs/flutter-apk/pili++-2.1.8-2026081004-armeabi-v7a-release-upstream-61c65a6-validation.apk`
+    （24,866,682 字节，SHA-256
+    `6A281BDAE1F5A2ACE1A06DDC5CFB7B91584B90288B638C520A0C97505B0FADCE`）；
+  - `build/app/outputs/flutter-apk/pili++-2.1.8-2026081004-arm64-v8a-release-upstream-61c65a6-validation.apk`
+    （24,979,125 字节，SHA-256
+    `3AA5CAE96BD004EDAF28855CD1804B1B6F34E391BF80400BB3674B432C53C84A`）；
+  - `build/app/outputs/flutter-apk/pili++-2.1.8-2026081004-x86_64-release-upstream-61c65a6-validation.apk`
+    （25,889,691 字节，SHA-256
+    `1B89C4656CAB1B7D3D6D4A8FB7FD3529436EB5046D65C56CCDCE1A450E37327B`）。
+  这些 APK 仅用于同步审计，不替代最近正式交付、不更新发布基线。
+- 本批未执行 Android 真机回归。上游触及刷新布局、视频控制器、播放器 UI 和路由，仍需
+  在准确合并源码上复核 mpv/ExoPlayer 点播与直播、字幕/轨道/截图、下拉全屏、应用内小窗、
+  系统 PiP、前后台和 Wi-Fi/蜂窝编码偏好；自动化通过不能替代真机验收。
+
+### 2026-08-25 播放信息弹窗本地化修复
+
+- 用户在 Samsung SM-S9180、Android 16 / SDK 36、`2.1.8+2026081004` 的
+  arm64 Release 包中确认：视频设置点击“播放信息”会在 Flutter `DialogRoute` 创建阶段触发
+  `MaterialLocalizations.of` 空值异常。堆栈止于 Flutter 弹窗路由，Media3 原生播放和解码器
+  状态不在故障链内。
+- 根因是上游迁移到 `material_ui` 后，应用注册的是 `material_ui` 的
+  `GlobalMaterialLocalizations.delegates`，而公共 `player_info_dialog.dart` 仍是仓库唯一直接
+  导入 `package:flutter/material.dart` 并调用 Flutter `showDialog` 的文件；两套复制实现的
+  `MaterialLocalizations` 类型不兼容。修复将该文件统一导入 `material_ui.dart`，
+  `PlayerInfoEntry`、mpv/ExoPlayer 后端中立数据、复制字段和播放器状态均未改变。
+- 新增 widget 回归测试，使用正式应用相同的 `material_ui MaterialApp` 与本地化代理打开播放
+  信息弹窗，验证无异常并能显示 Media3 解码器字段；定向测试 1/1 通过。
+- 重启后使用固定 Flutter 3.47.1 / Dart 3.13.0、JDK 17 和 Android SDK 工具链补完验证：
+  `dart format --output=none --set-exit-if-changed lib test` 检查 1,332 个文件、0 changed；
+  `dart analyze` 为 0 error、0 warning、33 条既有 info；定向 widget 测试 1/1、完整
+  `flutter test --no-pub --concurrency=1` 70/70、Android `:app:testDebugUnitTest` 均通过。
+- 依赖重新生成后的首次 Release 构建因固定 `PUB_CACHE` 内 `material_ui 1.0.1` 尚未应用
+  仓库兼容补丁而失败；执行既有 `lib/scripts/patch.ps1 -platform android` 后，在未改变应用
+  源码的情况下 arm64 Release 构建成功。这是构建前置补丁未执行的环境问题，不是源码或
+  测试失败。
+- 为满足覆盖安装和递增 `versionCode` 的交付规则，版本提升为 `2.1.9+2026082501`。运行时代码
+  提交为 `15f9e2e5bddcead114945a5f76494cdc1374212c`，最终 APK 使用
+  `tool/write_ci_build_metadata.ps1` 生成同一提交的 `pili.hash` / `pili.time` 后重建。arm64
+  真机复测包位于
+  `build/app/outputs/flutter-apk/pili++-2.1.9-2026082501-arm64-v8a-release-player-info-dialog-fix-final.apk`，
+  构建时间 `2026-08-25 11:46:51 +08:00`，大小 24,958,592 字节，APK SHA-256 为
+  `CBBA2B07BA3EEE1F048C262D059474AAFA1D0308865568365D04CB0DBB41D0B6`。
+  `tool/verify_release.ps1` 已确认 applicationId `com.shudo.plusplus`、应用名 `pili++`、
+  versionName `2.1.9`、versionCode `2026082501`、仅 `arm64-v8a` 和既有证书 SHA-256
+  `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C`；本次交付已同步
+  `tool/release_baseline.json`，后续交付必须使用更高的 `versionCode`。
+- 当前剩余项是同一 Samsung 设备分别在 ExoPlayer/mpv、普通窗口/全屏中打开“播放信息”，
+  核对弹窗可正常显示、复制字段可用且播放不中断；自动化通过不能替代该真机复测。

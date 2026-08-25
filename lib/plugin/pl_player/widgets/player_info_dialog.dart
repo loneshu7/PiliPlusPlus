@@ -1,6 +1,6 @@
 import 'package:PiliPlus/plugin/pl_player/models/player_media_track.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 void showPlayerInfoDialog(
