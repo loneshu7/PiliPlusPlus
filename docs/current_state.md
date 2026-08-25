@@ -20,8 +20,8 @@
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
 - 已获取并合入的 `upstream/main`：`61c65a65cef0aa9993b16859d1e1f922e4557b3f`
   (`feat: show copy deviceInfo card (#2688)`)。
-- 当前分支相对 `upstream/main` 领先 108、落后 0，merge-base 为 `61c65a6`；相对
-  `origin/main` 领先 39、落后 0。提交数以实际 `git rev-list` 为准。
+- 当前分支相对 `upstream/main` 领先 114、落后 0，merge-base 为 `61c65a6`；相对
+  `origin/main@77249e4` 领先 3、落后 0。提交数以实际 `git rev-list` 为准。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -1291,3 +1291,23 @@ the final audit artifact. The formal release baseline remains unchanged.
   强制 Media3、关闭滤镜/解码/生命周期差异、删除 Android 原生 mpv 包、清理死代码与设置、
   完整自动化/真机/签名交付。推荐下一批从项目自有字幕配置和 SponsorBlock 公共监听接口开始。
 - 本次仅新增和串联开发文档、核对仓库基线，没有修改运行时代码、版本、发布包或真机验收状态。
+
+### 2026-08-25 合入远端 media_kit checksum CI 修复
+
+- Android mpv 移除方案先作为独立提交 `37c1ecfcf83d4e1871279c49714bbe15847ec7eb` 保存；
+  随后以普通 merge 合入 `origin/main@77249e49de1a544b4c4fac8ac51352bd4b778177`，本地
+  合并提交为 `467ee49ad250fe586ab6445f63ffffce8515c446`，未执行 rebase 或强制改写历史。
+- 失败 Run `32811537355` 在 `2.1.9@cedfa8f` 上的 Flutter quality 全部通过，但旧
+  `tool/patch_media_kit_checksums.ps1` 只识别 `/vnext/` 原生资源，面对当前锁定的
+  `media_kit@465b10c` 时找不到匹配 `build.gradle`，在 Android 构建前失败且未生成 artifact。
+- 当前锁定依赖已改用 `libmpv-android-video-build` 的 `20260824` 资源，并在其 Gradle 脚本内
+  对三个 ABI 的已缓存和新下载 JAR 执行 MD5 校验。`77249e4` 删除过时的缓存改写步骤和脚本，
+  没有删除依赖自身的完整性校验；后续 Run `32812376436` 已成功下载三份 JAR、完成 Flutter
+  quality、构建三个 ABI Release APK 并上传 artifact。
+- 本地核对确认 `tool/patch_media_kit_checksums.ps1` 已不存在，
+  `.github/workflows/build.yml` 中相关步骤/引用为 0，`git diff --check` 通过。合入内容只涉及
+  CI 和文档，没有修改播放器运行时代码，因此未重复执行本地 Flutter/Android 全量测试；精确
+  CI 修复提交已有上述成功 Actions 证据。
+- 远端 `2.1.9` 标签仍指向修复前的 `cedfa8f`，不能通过重跑旧 workflow 获得修复。后续正式
+  发布必须使用更高的版本和 `versionCode` 创建新标签；GitHub Release 前仍应补上
+  `tool/verify_release.ps1` 对每个 APK 的身份、ABI、签名和版本校验门禁。
