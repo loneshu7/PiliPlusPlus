@@ -1,7 +1,7 @@
 <div align="center">
   <img width="180" height="180" src="assets/images/logo/logo.png" alt="pili++ logo">
   <h1>pili++</h1>
-  <p>使用 Flutter 开发的哔哩哔哩第三方客户端</p>
+  <p>面向 Android 的 PiliPlus 衍生版本</p>
 
   ![GitHub repo size](https://img.shields.io/github/repo-size/loneshu7/PiliPlusPlus)
   ![GitHub Repo stars](https://img.shields.io/github/stars/loneshu7/PiliPlusPlus)
@@ -9,193 +9,239 @@
 </div>
 
 > [!IMPORTANT]
-> pili++ 基于开源项目
+> `pili++` 基于开源项目
 > [bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)。
-> 当前 Android 端正在将 mpv 播放后端迁移到 AndroidX Media3
-> ExoPlayer。迁移完成的标准是原 mpv 用户功能全部闭环，而不只是视频能够播放。
+> 本仓库持续同步上游，只长期维护三类 Android 功能差异；其余通用产品功能以上游实现为准。
 
-## 项目目标
+## 项目定位
 
-Android 端使用 Media3 ExoPlayer 替代 mpv，同时保留原有 Flutter 播放器的
-控件、手势、弹幕、字幕和业务行为：
+`pili++` 不是独立重写全部业务功能的 fork，而是“上游 PiliPlus + 三类长期维护的 Android 差异”：
 
-- mpv 可用的功能，ExoPlayer 模式也必须可用；
-- 相同入口、控件和手势产生相同结果；
-- 播放状态正确回传到既有 Flutter UI 与业务逻辑；
-- 不通过隐藏入口、静默回退 mpv 或显示“暂不支持”掩盖缺口；
-- Media3 没有直接对应能力时，在原生桥接层或 Flutter 公共层实现等价结果。
+1. 使用 AndroidX Media3 ExoPlayer 完整替代 Android 上的 mpv；
+2. 视频详情页下拉进入竖屏全屏、竖屏全屏上滑退出及其连续动画；
+3. 复用同一播放器会话和 Flutter `Texture` 的应用内小窗。
 
-详细验收标准见 [Android ExoPlayer 兼容记录](docs/android_exoplayer.md)。
+搜索、推荐、动态、评论、账号、收藏、下载、普通 UI、业务接口等功能由上游 PiliPlus 实现。
+本仓库的产品名、Android applicationId、Android-only CI、签名和发布校验属于支持上述三类差异的
+工程改造，不作为额外产品功能分叉。
 
-## 当前迁移状态
+## Media3 迁移目标
 
-| 范围 | 状态 |
+“替代 mpv”不只是让视频能够播放。最终状态必须满足：
+
+- 原有控件、手势、弹幕、字幕、章节、轨道、截图和业务入口保持可用；
+- 播放、暂停、seek、缓冲、倍速、音量、完成、错误和换源状态正确回传 Flutter；
+- 点播、DASH、直播、独立音频、本地文件及主要 UGC/PGC 场景闭环；
+- 音频焦点、媒体通知、耳机/蓝牙、后台播放、应用内小窗和系统 PiP 行为一致；
+- 不通过隐藏入口、空实现、最终态“暂不支持”或静默回退 mpv 掩盖缺口；
+- Android APK 最终不再包含 `libmpv.so` 和无用途的 media_kit 原生组件。
+
+Media3 继续通过 Flutter `Texture` 接入原播放器图层，不使用会遮挡 Flutter 控件的原生
+`PlayerView`。详细兼容记录见
+[Android ExoPlayer 兼容记录](docs/android_exoplayer.md)，完整移除计划见
+[Android mpv 移除方案](docs/android_mpv_removal.md)。
+
+## 当前状态
+
+以下结论来自当前状态文档中记录的自动化和 Android 真机反馈，不自动覆盖所有 Android 版本、
+芯片、折叠屏或后续代码修改。
+
+| 范围 | 当前状态 |
 | --- | --- |
-| Flutter `Texture` 视频图层、DASH 合流与基础播放状态 | 已实现并通过 Release 构建 |
-| 控制层、双击、进度/亮度/音量滑动与长按倍速 | 已真机验证 |
-| 清晰度、CDN、分P切换与异常重载 | 已真机验证 |
-| 全屏、旋转、锁定、画面适配、缩放与翻转 | 已真机验证 |
-| 弹幕、字幕、章节、预览、高能进度与 SponsorBlock | 已真机验证 |
-| ExoPlayer 自动进入 Android 系统画中画 | 已真机验证 |
-| 应用内小窗及其与系统画中画的往返 | 已真机验证 |
-| 音频焦点、媒体通知与耳机/蓝牙控制 | 已真机验证 |
-| 全部 mpv 功能的完整替代 | 进行中 |
+| Media3 `Texture`、DASH 点播、直播和独立音频 | 已实现，主要流程已真机验证 |
+| 控制层、播放/暂停、seek、倍速、亮度/音量和常用手势 | 已真机验证 |
+| 清晰度、CDN、分P、换源状态保持和网络重载 | 已真机验证 |
+| 全屏、旋转、锁定、画面适配、缩放和翻转 | 已真机验证 |
+| 弹幕、字幕、bitmap/竖排字幕、章节、预览、高能进度和 SponsorBlock | 已真机验证 |
+| 音视频/字幕轨道、播放器信息和当前支持的音频滤镜映射 | 已实现并有真机验证记录 |
+| 音频焦点、媒体通知、媒体键、耳机/蓝牙、后台和系统 PiP | 已真机验证 |
+| 普通截图、评论区截图和动态 WebP | 已真机验证 |
+| 视频页下拉竖屏全屏、上滑退出和连续缩放动画 | 已真机验证 |
+| 应用内小窗及其与系统 PiP 的往返 | 已真机验证 |
+| 解码模式、安全缓冲、网络恢复和硬解失败后软解重试 | 已实现，仍需扩展设备与媒体矩阵 |
+| Android 完整移除 mpv | 未完成 |
 
-“已实现”表示代码和 Release 构建已通过，不等于真机验收完成。未经过真机
-对照验证的项目会明确标记为“待真机验证”。
+当前 APK 仍包含 mpv。Live Photo、公共层中的部分 media_kit 类型、Android 初始化和设置项、任意
+复杂 FFmpeg 音频滤镜及部分生命周期边界仍需迁移或验收。因此现在不能宣称“mpv 已被完整替代”。
+精确的 Git 基线、最近交付、已知缺口和下一步见
+[当前项目状态](docs/current_state.md)。
 
-## 支持平台
+## 三类本地功能
 
-- Android
-- Android Pad
+### 视频页下拉竖屏全屏
 
-本仓库只构建、测试和交付 Android 版本。iOS、macOS、Windows 和 Linux 的平台目录与
-条件代码暂时保留，以便继续同步上游 PiliPlus，但不作为本项目当前支持或发布的平台。
-
-## 主要功能
-
-- 视频、番剧、课程、合集、互动视频与本地视频播放；
-- 画质、音质、解码格式、分P、CDN、倍速和画面比例切换；
-- 弹幕、高级弹幕、字幕、高能进度条、章节、缩略图预览与 SponsorBlock；
-- 双击播放/暂停、长按倍速、横向进度和纵向亮度/音量手势；
-- 全屏、横竖屏、画中画、后台音频和媒体控制；
-- 可选的应用内小窗播放，返回其他页面时继续复用当前播放器；
-- 推荐、热门、动态、搜索、评论、收藏、稍后再看、历史记录和私信；
-- 离线缓存、DLNA、WebDAV 设置备份与多账号。
+在视频详情内容真实位于顶部时，下拉可以跟手进入竖屏全屏；竖屏全屏视频区域上滑可以退出，
+短滑会回弹。播放器尺寸、位置和详情面板由同一进度驱动，并避免影响横向 seek、纵向亮度/音量、
+双击、长按、缩放和锁定等原播放器手势。评论区和详情非顶部滚动不会触发该交互。
 
 ### 应用内小窗
 
-“设置 → 播放设置 → 应用内小窗播放”开关默认关闭。开启后，从正在播放的视频页
-返回应用内其他页面时，会将同一个播放器平滑缩小为悬浮小窗，而不是重新创建播放
-会话。小窗会按视频真实宽高比适配，缩放与圆角动画同步进行；恢复时，小窗归位和
-视频页加载同步进行。
+“设置 → 播放设置 → 应用内小窗播放”默认关闭。开启后，从正在播放的视频页返回时会把同一个
+播放器和 Flutter `Texture` 平滑缩小为悬浮小窗，不重新创建媒体会话或跳转进度。
 
-应用内小窗提供播放/暂停、前进、后退、关闭和恢复入口，不显示“系统画中画”按钮。
-应用进入后台时仍可按系统规则转入 Android 画中画；从系统画中画点击全屏会恢复到
-当前视频详情页。打开下一个视频时，旧小窗结束并恢复为正常视频播放。
+小窗按视频真实宽高比适配，支持拖动、播放/暂停、VOD 前后十秒、关闭和恢复当前视频页；应用内
+小窗不显示“系统画中画”按钮。进入后台后仍可按系统规则进入 Android PiP，从 PiP 点击全屏会
+恢复当前视频详情页，关闭 PiP 不会主动打开视频页。
 
-应用内小窗与系统画中画的往返，以及音频焦点、媒体通知和耳机/蓝牙控制，已经在
-当前真实 Android 设备上完成验证。该结果不自动覆盖其他 Android 版本、芯片、折叠屏
-或后续代码修改后的回归测试。
+## 上游同步
 
-## 下载与安装
+本仓库会频繁同步上游 PiliPlus。处理冲突时遵循：
 
-发布包将上传到
-[PiliPlusPlus Releases](https://github.com/loneshu7/PiliPlusPlus/releases)。
+- 普通业务、普通 UI 和依赖更新默认接受上游实现；
+- 上游重写视频页或播放器 UI 时，接受上游新结构，再重新挂接 Media3、竖屏全屏和小窗的最小 hook；
+- 不用旧本地整文件覆盖上游，也不把上游已有功能记为 `pili++` 自研；
+- `pubspec.yaml`、Gradle、Manifest 和生成文件按最终语义逐项合并；
+- 同步后按受影响范围回归 Media3、竖屏全屏、小窗、系统 PiP 和生命周期。
 
-Android Release APK：
+完整协作和同步规则见 [AGENTS.md](AGENTS.md)。
 
-- 用户可见名称为 `pili++`；
-- applicationId 当前为 `com.shudo.plusplus`；
-- 通用包同时包含 `arm64-v8a`、`armeabi-v7a` 和 `x86_64`；
-- 后续版本必须使用同一证书签名，才能覆盖安装并保留应用数据。
+## 支持平台
 
-不要从非本仓库或其他不可信渠道安装 APK。
+当前只构建、测试和交付：
 
-## 检查更新
+- Android；
+- Android 平板。
 
-- 默认在应用启动时检查本仓库的 GitHub Releases；
-- 可在“设置 → 其他设置 → 检查更新”启用或关闭启动检查；
-- 可点击“关于 → 当前版本”手动检查；
-- Android 会选择与设备 ABI 匹配的 Release APK，并交给浏览器下载；
-- 当前不在应用内静默下载或自动安装，安装仍由 Android 系统确认。
+仓库仍保留 iOS、macOS、Windows 和 Linux 平台目录及条件代码，以便继续同步上游，但这些平台不在
+`pili++` 当前支持和发布范围内。
 
-Release APK 文件名必须保留版本号、`versionCode` 和 ABI，更新判断会优先读取
-这些信息。
+## 下载、安装与更新
+
+发布包位于 [PiliPlusPlus Releases](https://github.com/loneshu7/PiliPlusPlus/releases)。
+
+Android Release APK 的身份约定：
+
+- 应用名称：`pili++`；
+- applicationId / namespace：`com.shudo.plusplus`；
+- Java/Kotlin package：`com.example.piliplus`；
+- 目标 ABI：`arm64-v8a`、`armeabi-v7a`、`x86_64`；
+- 后续正式包使用同一签名证书和递增的 `versionCode`，以支持覆盖安装并保留数据。
+
+应用默认检查本仓库的 GitHub Releases，也可在设置中关闭启动检查，或从“关于 → 当前版本”手动
+检查。Android 会选择匹配设备 ABI 的 APK 并交给浏览器下载；安装仍由 Android 系统确认，不会在
+应用内静默安装。
+
+请只从本仓库或可信渠道获取 APK。
 
 ## Android 本地构建
 
-### 环境
+### 工具链
 
-- Flutter `3.44.8`
-- Dart `>= 3.12.0`
-- JDK 17
-- Android SDK / Build Tools
+- Flutter `3.47.1`；
+- Dart `>= 3.13.0`；
+- JDK 17；
+- Android SDK，项目当前 compile/target SDK 为 37。
 
-### 基础命令
+Flutter 版本同时记录在 `.fvmrc` 和 `pubspec.yaml`。项目依赖对 Flutter SDK、`material_ui` 和
+`cupertino_ui` 有兼容补丁，构建前必须执行现有 patch 流程。
 
-```bash
-flutter pub get
-dart format .
-flutter analyze
-flutter build apk --release
+### PowerShell 构建示例
+
+```powershell
+$env:GITHUB_WORKSPACE = (Get-Location).Path
+$flutterCommand = (Get-Command flutter).Source
+$env:FLUTTER_ROOT = Split-Path (Split-Path $flutterCommand -Parent) -Parent
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File lib/scripts/patch.ps1 -platform android
+
+dart format --output=none --set-exit-if-changed lib test
+dart analyze
+flutter test --no-pub --concurrency=1
+
+Push-Location android
+./gradlew.bat :app:testDebugUnitTest
+Pop-Location
+
+flutter build apk --release --split-per-abi `
+  --dart-define-from-file=pili_release.json --no-pub
 ```
 
-正式发布时还应通过 `--build-name`、`--build-number` 和 `--dart-define`
-写入版本、Git commit 与构建时间。
+`lib/scripts/patch.ps1` 会按项目要求准备 Flutter 和 UI 包并执行 `flutter pub get`。它要求使用 Git
+形式的 Flutter SDK；不要跳过补丁后把由此产生的编译错误误判为应用源码问题。
 
-### Release 签名
+## CI 与正式发布
 
-Android 签名使用本地 `android/key.properties` 和对应 keystore。以下内容均被
-Git 忽略，不得提交：
+GitHub Actions 的 `Build` workflow 会：
 
-- keystore 文件；
-- store password；
-- key alias；
-- key password。
+1. 应用项目补丁；
+2. 检查格式、运行 `dart analyze` 和完整 Flutter 测试；
+3. 构建 Android 分 ABI APK；
+4. PR 构建开发包；非 PR 构建从 Secrets 写入签名材料，构建后立即清理；
+5. 手动运行且提供 tag 时创建 GitHub Release，其余情况只上传 Actions artifact。
 
-GitHub Actions 发布需配置以下仓库 Secrets：
+签名构建需要以下 Secrets：
 
-- `SIGN_KEYSTORE_BASE64`
-- `KEYSTORE_PASSWORD`
-- `KEY_ALIAS`
-- `KEY_PASSWORD`
+- `SIGN_KEYSTORE_BASE64`；
+- `KEYSTORE_PASSWORD`；
+- `KEY_ALIAS`；
+- `KEY_PASSWORD`。
 
-`Build` workflow 会在 PR 上执行格式检查、静态分析、测试和开发 APK 构建；推送到
-`main` 时会使用上述 Secrets 生成同证书签名的 Android 构建产物。自动构建只上传
-Actions artifact，不创建 GitHub Release；正式发布仍需手动触发 workflow 并显式填写 tag。
+keystore、`android/key.properties` 和所有密码均不得提交。
 
-## 验证要求
+正式交付前必须使用项目发布门禁：
 
-每批 Android 播放器修改至少完成：
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File tool/verify_release.ps1 -ApkPath <apk>
+```
 
-1. `dart format`；
-2. 相关文件静态分析；
-3. Android Release 构建；
-4. APK 签名、applicationId、版本、ABI 和 SHA-256 校验；
-5. 使用同一视频与 mpv 执行相同操作进行真机对照；
-6. 普通窗口、全屏及适用的前后台/画中画场景回归。
+该脚本根据 `tool/release_baseline.json` 检查应用身份、版本、ABI 和签名。只有产物实际交付后才能
+更新发布基线；`-AllowAlreadyDelivered` 仅用于审计历史产物，不能授权新交付。
 
-无法在当前环境完成的真机检查必须记录为“待真机验证”。
+## 验证原则
 
-## 仓库
+三类本地功能的修改和受影响的上游同步至少需要：
+
+- 格式化、静态分析和完整 Flutter 测试；
+- Android JVM 单元测试和 Release 构建；
+- 适用时检查 applicationId、版本、ABI、签名和 APK SHA-256；
+- 使用相同媒体进行 mpv / Media3 对照；
+- 回归普通窗口、全屏、竖屏下拉、应用内小窗、系统 PiP 和适用的前后台场景。
+
+自动化通过不能替代真机验证。未执行的场景必须明确标记为“待真机验证”。
+
+## 项目文档
+
+- [协作约定与上游同步规则](AGENTS.md)
+- [当前项目状态](docs/current_state.md)
+- [Android ExoPlayer 兼容记录](docs/android_exoplayer.md)
+- [Android mpv 移除方案](docs/android_mpv_removal.md)
+- [发布校验工具说明](tool/README.md)
+
+## 仓库与上游
 
 - 当前仓库：[loneshu7/PiliPlusPlus](https://github.com/loneshu7/PiliPlusPlus)
-- 上游项目：[bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)
+- 直接上游：[bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)
 - 原始项目：[guozhigq/pilipala](https://github.com/guozhigq/pilipala)
 - 相关上游：[orz12/PiliPalaX](https://github.com/orz12/PiliPalaX)
 
-提交问题前请先搜索
-[现有 Issues](https://github.com/loneshu7/PiliPlusPlus/issues)。
-
-本仓库会持续同步上游的界面、交互和依赖更新，并在合并时保留本分支的 ExoPlayer、
-应用内小窗及 Android 发布身份改造。精确的同步基线、验证结果和待办记录见
-[当前项目状态](docs/current_state.md)。
+提交问题前请先搜索 [现有 Issues](https://github.com/loneshu7/PiliPlusPlus/issues)。
 
 ## 声明
 
-本项目仅用于学习和测试，不提供任何破解内容。项目使用的接口资料均来自公开
-渠道。使用者应遵守所在地区法律法规、哔哩哔哩用户协议及相关内容版权要求。
+本项目仅用于学习和测试，不提供任何破解内容。项目使用的接口资料均来自公开渠道。使用者应遵守
+所在地区法律法规、哔哩哔哩用户协议及相关内容版权要求。
 
 ## 致谢
 
+- [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 及其所有贡献者
+- [AndroidX Media3](https://developer.android.com/media/media3)
 - [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
 - [media-kit](https://github.com/media-kit/media-kit)
 - [flutter_meedu_videoplayer](https://github.com/zezo357/flutter_meedu_videoplayer)
 - [dio](https://pub.dev/packages/dio)
 
-感谢所有上游作者和贡献者。
-
 ## 许可证
 
 本项目依据 [GNU General Public License v3.0](LICENSE) 发布。
 
-## Star History
+## 上游 Star History
 
 <a href="https://star-history.dera.page/#bggRGjQaUbCoE/PiliPlus&Date">
  <picture>
    <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date&theme=dark" />
    <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
-   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
+   <img alt="PiliPlus Star History Chart" src="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
  </picture>
 </a>
