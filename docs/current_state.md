@@ -8,7 +8,7 @@
 
 ## 仓库基线
 
-- 当前分支：`sync/upstream-20260826`
+- 当前分支：`release/2.1.10`
 - 本次同步起点：`release/2.1.10@74b9ad65c2f8e91ef37d0bf3f3904f6694e9d631`
   (`docs: record Android fix GitHub sync`)。
 - 最新 GitHub 发布源提交：`859d39c4ff3c77c37e1cc1d7131192df8f8b4241`
@@ -24,8 +24,8 @@
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- 完成本状态提交后，当前分支相对 `upstream/main` 领先 129、落后 0；相对同步起点
-  `release/2.1.10@74b9ad6` 领先 7、落后 0。提交数以实际 `git rev-list` 为准。
+- 完成本状态提交后，当前分支相对 `upstream/main` 领先 130、落后 0；相对同步起点
+  `release/2.1.10@74b9ad6` 领先 8、落后 0。提交数以实际 `git rev-list` 为准。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -1502,7 +1502,8 @@ the final audit artifact. The formal release baseline remains unchanged.
 - 从工作区干净的 `release/2.1.10@74b9ad65c2f8e91ef37d0bf3f3904f6694e9d631` 创建
   `sync/upstream-20260826`，合入 `upstream/main@35e5454a47246c187106b869cd02b9bdbe90c015`。
   同步前本地领先 127、上游领先 5，merge-base 为 `66c9c33`；合并提交为
-  `dbaf088158edbe4e09fc007e3d1261806679fe5b`。原 `release/2.1.10` 分支未被改写。
+  `dbaf088158edbe4e09fc007e3d1261806679fe5b`。完整验证通过后，`release/2.1.10` 以
+  `--ff-only` 前进到同步结果；未执行 rebase、强推或提交历史改写。
 - 上游 5 个提交共改动 15 个文件，与本地改动范围重叠 7 个文件；Git 仅在
   `lib/pages/video/widgets/header_control.dart` 产生内容冲突。该文件以本地后端中立播放器菜单和
   `PlayerSubtitleSource` 为基线，重放上游举报内容校验与 `.bcc` 字幕支持；`.bcc` 与 `.json`
