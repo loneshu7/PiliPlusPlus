@@ -38,6 +38,7 @@ import 'package:PiliPlus/plugin/pl_player/models/subtitle_style.dart';
 import 'package:PiliPlus/plugin/pl_player/models/video_fit_type.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/captured_frame.dart';
+import 'package:PiliPlus/plugin/pl_player/utils/player_listener_registry.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
@@ -1411,9 +1412,12 @@ class PlPlayerController with BlockConfigMixin {
   }
 
   List<StreamSubscription>? _subscriptions;
-  final Set<ValueChanged<Duration>> _positionListeners = {};
-  final Set<ValueChanged<PlayerStatus>> _statusListeners = {};
-  final Set<ValueChanged<Size>> _videoSizeListeners = {};
+  final PlayerListenerRegistry<Duration> _positionListeners =
+      PlayerListenerRegistry();
+  final PlayerListenerRegistry<PlayerStatus> _statusListeners =
+      PlayerListenerRegistry();
+  final PlayerListenerRegistry<Size> _videoSizeListeners =
+      PlayerListenerRegistry();
   Size? _lastVideoSize;
 
   void _notifyVideoSize(int width, int height) {
@@ -1421,9 +1425,7 @@ class PlPlayerController with BlockConfigMixin {
     final size = Size(width.toDouble(), height.toDouble());
     if (_lastVideoSize == size) return;
     _lastVideoSize = size;
-    for (final listener in _videoSizeListeners) {
-      listener(size);
-    }
+    _videoSizeListeners.notify(size);
   }
 
   void _startExoListeners(ExoPlayerController player) {
@@ -1450,9 +1452,7 @@ class PlPlayerController with BlockConfigMixin {
         videoPlayerServiceHandler?.onPositionChange(event.position);
         makeHeartBeat(posInSeconds);
       }
-      for (final listener in _positionListeners) {
-        listener(event.position);
-      }
+      _positionListeners.notify(event.position);
 
       if (event.duration > Duration.zero) {
         updateDuration(event.duration);
@@ -1484,9 +1484,7 @@ class PlPlayerController with BlockConfigMixin {
         isBuffering.value = false;
         playerStatus.value = .completed;
         videoPlayerServiceHandler?.onStatusChange(.completed, false, isLive);
-        for (final listener in _statusListeners) {
-          listener(.completed);
-        }
+        _statusListeners.notify(.completed);
         makeHeartBeat(-1, type: .completed);
       } else if (!event.completed && lastPlaying != event.playing) {
         lastCompleted = false;
@@ -1499,9 +1497,7 @@ class PlPlayerController with BlockConfigMixin {
           event.buffering,
           isLive,
         );
-        for (final listener in _statusListeners) {
-          listener(event.playing ? .playing : .paused);
-        }
+        _statusListeners.notify(event.playing ? .playing : .paused);
         if (event.position > Duration.zero) {
           makeHeartBeat(event.position.inSeconds, type: .status);
         }
@@ -1657,9 +1653,7 @@ class PlPlayerController with BlockConfigMixin {
           isLive,
         );
 
-        for (final element in _statusListeners) {
-          element(playing ? .playing : .paused);
-        }
+        _statusListeners.notify(playing ? .playing : .paused);
 
         final seconds = _videoPlayerController!.state.position.inSeconds;
         if (seconds != 0) {
@@ -1677,9 +1671,7 @@ class PlPlayerController with BlockConfigMixin {
           playerStatus.value = .completed;
           videoPlayerServiceHandler?.onStatusChange(.completed, false, isLive);
 
-          for (final element in _statusListeners) {
-            element(.completed);
-          }
+          _statusListeners.notify(.completed);
 
           makeHeartBeat(-1, type: .completed);
         }
@@ -1699,9 +1691,7 @@ class PlPlayerController with BlockConfigMixin {
           makeHeartBeat(posInSeconds);
         }
 
-        for (final element in _positionListeners) {
-          element(position);
-        }
+        _positionListeners.notify(position);
       }),
       stream.duration.listen(updateDuration),
       stream.buffer.listen((Duration buffer) {

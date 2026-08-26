@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.app.PictureInPictureParams;
 import android.app.RemoteAction;
 import android.app.SearchManager;
+import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -21,10 +22,13 @@ import android.graphics.drawable.Icon;
 import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.Rational;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.Keep;
@@ -98,7 +102,17 @@ public final class AndroidHelper {
         ArrayList<String> cookiesList = new ArrayList<>(1);
         cookiesList.add(cookie);
         intent.putStringArrayListExtra("cookies", cookiesList);
-        getContext().startActivity(intent);
+        try {
+            getContext().startActivity(intent);
+        } catch (ActivityNotFoundException ignored) {
+            new Handler(Looper.getMainLooper()).post(() ->
+                    Toast.makeText(
+                            getContext(),
+                            "未找到“哔哩发评反诈”组件，请安装或更新该应用",
+                            Toast.LENGTH_LONG
+                    ).show()
+            );
+        }
     }
 
     public static void openLinkVerifySettings() {

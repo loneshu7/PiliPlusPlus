@@ -1864,3 +1864,28 @@ Android `versionCode`.
 A fresh Samsung device check is still required for both ExoPlayer and mpv player-info
 dialogs in windowed and full-screen modes; automated verification does not close that
 device-acceptance item.
+
+### 2026-08-25 listener dispatch and duplicate-path 403 fix
+
+Samsung SM-S9180 / Android 16 logs from `2.1.9+2026082501` exposed two Media3
+path defects. A status callback synchronously removed itself while
+`PlPlayerController._startExoListeners` was iterating its three-listener `Set`,
+which raised `Concurrent modification during iteration`. Position, status, and
+video-size callbacks now use one snapshot registry for both Media3 and mpv
+dispatch. A regression test confirms that self-removal is safe and applies to
+the next notification without truncating the current snapshot.
+
+The failed Media3 video URI was visibly `https://host//upgcxcode/...` and
+returned HTTP 403. The Media3 URI resolver now canonicalizes only this known
+Bilibili duplicate slash before `upgcxcode`, preserving the complete signed
+query string and leaving unrelated URLs unchanged. Android tests cover all three
+properties. This fix does not prove every 403 is resolved: a later failure with
+an already canonical single-slash URL must be treated as an expired play URL or
+CDN rejection and followed through address refresh or CDN fallback.
+
+Formatting checks cover 1,327 files with no changes; complete Dart analysis has
+0 errors and 0 warnings (30 pre-existing info diagnostics); the complete Flutter
+suite passes 73/73; Android `:app:testDebugUnitTest` and the arm64-target Release
+build pass. No post-fix device test or formal delivery was performed. The
+listener self-removal path and the same media/CDN selection remain pending on the
+reporting Samsung device.
