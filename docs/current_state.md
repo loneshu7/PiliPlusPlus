@@ -1494,3 +1494,7 @@ the final audit artifact. The formal release baseline remains unchanged.
 - 本批未执行修复后的 Android 真机复测，也未生成正式交付包。工作区开始时已有用户版本修改
   `2.1.10+2026082502`，本批保留该修改；正式交付仍需准确构建元数据、递增版本、发布校验和
   Samsung 真机复现路径复测。
+- 上述运行时修复、测试、文档和版本提升已提交为
+  `3a9ea57303f77a36cc10ec5843ad94cbf42eccdd`（`fix: handle reported Android runtime failures`），
+  并推送到 GitHub `origin/release/2.1.10`；未直接修改或合并 `origin/main`。对应 push 已触发
+  GitHub Actions Build Run `32941032821`，记录本行时仍在运行。
