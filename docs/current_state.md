@@ -1471,3 +1471,30 @@ the final audit artifact. The formal release baseline remains unchanged.
 - 首轮 `...upstream-66c9c33-validation.apk` 和中间 `...metadata-fix-validation.apk` 均已废弃，
   不应继续安装或用于真机验收。最终包仍是同 versionCode 的同步验证包，不更新正式发布基线；
   需在真机确认关于页显示 `2.1.9+2026082501`、手动检查更新不再提示 2.1.8。
+
+### 2026-08-25 真机错误日志修复
+
+- Samsung SM-S9180 / Android 16、`2.1.9+2026082501` 真机日志确认三项独立问题：
+  `PlPlayerController._startExoListeners` 在状态监听回调同步注销自身时直接遍历 `Set`，触发
+  `Concurrent modification during iteration`；可选“哔哩发评反诈”开关启用但目标外部 Activity
+  不存在时抛出 `ActivityNotFoundException`；一个 Media3 视频源使用
+  `https://host//upgcxcode/...` 双斜杠路径并返回 HTTP 403。
+- 播放器的位置、状态和视频尺寸监听改由项目自有快照分发器通知；回调可在本轮分发中安全删除
+  自身或其他监听，不影响当前快照。新增回归测试覆盖三名监听者中首名同步自注销，并验证后续
+  通知只到达剩余监听者。此修复同时作用于 Media3 和 mpv 公共监听路径。
+- Android 外部反诈组件启动现在捕获 `ActivityNotFoundException`，在主线程显示“请安装或更新”
+  提示，不再把可选外部应用缺失记录为 pili++ 异常；开关默认值和上游评论检查业务语义未改变。
+- Media3 URI 解析只规范化 B 站 `upgcxcode` 已知路径中 host 后的重复斜杠，完整保留签名 query，
+  并保持其他 URL 原样。新增 Android 测试覆盖双斜杠修正、鉴权 query 不变和无关 URL 不变。
+  若后续日志已是单斜杠仍返回 403，则不能把本修复视为已解决，应继续按过期播放地址或 CDN
+  节点拒绝排查并实现重新取源/线路回退。
+- 固定 Flutter 3.47.1 / Dart 3.13.0、JDK 17 与项目 Android SDK 验证：格式检查 1,327 个文件、
+  0 changed；`dart analyze` 为 0 error、0 warning、30 条既有 info；完整 Flutter 测试 73/73；
+  Android `:app:testDebugUnitTest` 与 arm64 Release 构建通过；`git diff --check` 通过。
+- 本批未执行修复后的 Android 真机复测，也未生成正式交付包。工作区开始时已有用户版本修改
+  `2.1.10+2026082502`，本批保留该修改；正式交付仍需准确构建元数据、递增版本、发布校验和
+  Samsung 真机复现路径复测。
+- 上述运行时修复、测试、文档和版本提升已提交为
+  `3a9ea57303f77a36cc10ec5843ad94cbf42eccdd`（`fix: handle reported Android runtime failures`），
+  并推送到 GitHub `origin/release/2.1.10`；未直接修改或合并 `origin/main`。对应 push 已触发
+  GitHub Actions Build Run `32941032821`，记录本行时仍在运行。
