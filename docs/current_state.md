@@ -1,6 +1,6 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-08-25 +08:00
+> 最后核对：2026-08-26 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
@@ -8,26 +8,24 @@
 
 ## 仓库基线
 
-- 当前分支：`agent/upstream-e097549`
-- 本次同步起点：`origin/main@12078a5e5cc686ee90869af7bb2dcebb526ec285`
-  (`Merge pull request #4 from loneshu7/agent/exoplayer-concrete-hwdec`)。
+- 当前分支：`sync/upstream-20260826`
+- 本次同步起点：`release/2.1.10@74b9ad65c2f8e91ef37d0bf3f3904f6694e9d631`
+  (`docs: record Android fix GitHub sync`)。
 - 最新 GitHub 发布源提交：`859d39c4ff3c77c37e1cc1d7131192df8f8b4241`
   (`chore: prepare 2.1.2 release`)
 - 最新功能快照：`0c647b51ae60defc39c6171e5ca9387e43e596d2`
   (`feat: retry decoder failures with software video fallback`)
-- 最新上游合并提交：`4d46b4fb6d53f0be8a6f69ca7e2a852ef2cc4176`
-  (`Merge upstream/main at 66c9c33`)。
+- 最新上游合并提交：`dbaf088158edbe4e09fc007e3d1261806679fe5b`
+  (`sync: merge upstream main at 35e5454`)。
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
-- 已获取并合入的 `upstream/main`：`66c9c33839c419189702a3a556634c89e347f27b`
-  (`fix: search apiType (#2697)`)。
+- 已获取并合入的 `upstream/main`：`35e5454a47246c187106b869cd02b9bdbe90c015`
+  (`upgrade deps`)。
 - 最新 R1 实现提交：`a4fd7e7715d38ca2b9c6da5ce727230229236474`
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- 完成本状态提交后，当前分支相对 `upstream/main` 领先 123、落后 0；相对
-  `origin/main@77249e4` 领先 20、落后 0；相对跟踪分支
-  `origin/agent/upstream-e097549@9a00eac` 领先 13、落后 0。提交数以实际
-  `git rev-list` 为准。
+- 完成本状态提交后，当前分支相对 `upstream/main` 领先 129、落后 0；相对同步起点
+  `release/2.1.10@74b9ad6` 领先 7、落后 0。提交数以实际 `git rev-list` 为准。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -1498,3 +1496,42 @@ the final audit artifact. The formal release baseline remains unchanged.
   `3a9ea57303f77a36cc10ec5843ad94cbf42eccdd`（`fix: handle reported Android runtime failures`），
   并推送到 GitHub `origin/release/2.1.10`；未直接修改或合并 `origin/main`。对应 push 已触发
   GitHub Actions Build Run `32941032821`，记录本行时仍在运行。
+
+### 2026-08-26 上游 5 提交同步至 35e5454
+
+- 从工作区干净的 `release/2.1.10@74b9ad65c2f8e91ef37d0bf3f3904f6694e9d631` 创建
+  `sync/upstream-20260826`，合入 `upstream/main@35e5454a47246c187106b869cd02b9bdbe90c015`。
+  同步前本地领先 127、上游领先 5，merge-base 为 `66c9c33`；合并提交为
+  `dbaf088158edbe4e09fc007e3d1261806679fe5b`。原 `release/2.1.10` 分支未被改写。
+- 上游 5 个提交共改动 15 个文件，与本地改动范围重叠 7 个文件；Git 仅在
+  `lib/pages/video/widgets/header_control.dart` 产生内容冲突。该文件以本地后端中立播放器菜单和
+  `PlayerSubtitleSource` 为基线，重放上游举报内容校验与 `.bcc` 字幕支持；`.bcc` 与 `.json`
+  同样转换为 VTT，没有恢复旧 `vttSubtitles` 数据结构或业务层 mpv 依赖。
+- 其余改动自动合并并经语义审查：DocumentsProvider 不再依赖 Activity/engineId，同时继续保留
+  `com.shudo.plusplus` applicationId/namespace、全限定 provider 类名和本地 authority；普通举报
+  弹窗改动按上游接受；依赖升级到 `flex_seed_scheme 5.0.0` 与 `media_kit@08b7b9`；上游损坏流
+  自动恢复参数和 NAL 错误刷新只作用于 mpv adapter。Media3 继续使用本地结构化错误分类、网络
+  重试和一次性硬解转软解回退，本批没有静默回退 mpv，也不把上游 mpv 日志匹配视为 Media3
+  已完成同类损坏流真机验收。
+- 最终树确认 `com.shudo.plusplus` 身份、`ExoPlayerController`/Media3 Texture、
+  `PagePullVideoExpansion`、`PlPlayerSurface` 和应用内小窗挂接点仍存在。格式检查覆盖 1,327 个
+  文件且 0 changed；`dart analyze` 为 0 error、0 warning、30 条既有 info；完整 Flutter 测试
+  73/73 通过；Android `:app:testDebugUnitTest` 与分 ABI Release 构建通过；`git diff --check` 通过。
+- 上游依赖首次下载遇到 GitHub TLS/连接超时，第三方 `android_file_picker` 的 Kotlin 增量缓存也
+  在 Windows 上无法关闭；依赖重试并通过 MD5 校验后，使用 `clean`、`--no-daemon` 和
+  `-Pkotlin.incremental=false` 完成 Android JVM/Release 门禁。上述是可再生成缓存/网络问题，
+  最终测试和构建结果均为通过。
+- 三份源码验证 APK 均通过 `tool/verify_release.ps1 -AllowAlreadyDelivered`，确认 applicationId
+  `com.shudo.plusplus`、应用名 `pili++`、versionName `2.1.10`、versionCode `2026082502`、
+  单一目标 ABI 和证书 SHA-256
+  `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C`：
+  - `build/app/outputs/flutter-apk/pili++-2.1.10-2026082502-armeabi-v7a-release-upstream-35e5454-validation.apk`
+    （SHA-256 `721697AE2017E60C6408EF1DFF3DB931241C0AAFD4EDB41497C33263D867A3A2`）；
+  - `build/app/outputs/flutter-apk/pili++-2.1.10-2026082502-arm64-v8a-release-upstream-35e5454-validation.apk`
+    （SHA-256 `72B7523761ABCD748B4451D8856E9FB1E0D798EEB4203FCDD758A529BC519323`）；
+  - `build/app/outputs/flutter-apk/pili++-2.1.10-2026082502-x86_64-release-upstream-35e5454-validation.apk`
+    （SHA-256 `FF90C85C62CC5B312CFAF77B47793144B0388C908D4BAFAD62EF92D7E085E3F3`）。
+  这些包不更新正式发布基线。
+- 本批未执行 Android 真机回归。仍需在准确合并源码上验证 `.bcc` 字幕、举报内容校验、
+  DocumentsProvider、mpv 损坏流恢复，并回归 Media3/mpv 点播与直播、下拉竖屏全屏、应用内
+  小窗、系统 PiP、前后台和播放器错误恢复；自动化通过不能替代真机验收。
