@@ -241,26 +241,34 @@ class HeaderControl extends StatefulWidget {
     required PlPlayerController ctr,
   }) {
     if (Accounts.main.isLogin) {
-      return autoWrapReportDialog(context, ReportOptions.danmakuReport, (
-        reasonType,
-        reasonDesc,
-        banUid,
-      ) {
-        if (banUid) {
-          final filter = ctr.filters;
-          if (filter.dmUid.add(extra.mid)) {
-            filter.count++;
-            GStorage.localCache.put(LocalCacheKey.danmakuFilterRules, filter);
+      return autoWrapReportDialog(
+        context,
+        ReportOptions.danmakuReport,
+        withContent: ReportOptions.danmakuReportCheck,
+        contentRequired: ReportOptions.danmakuReportCheck,
+        (reasonType, reasonDesc, banUid) {
+          if (banUid) {
+            final filter = ctr.filters;
+            if (filter.dmUid.add(extra.mid)) {
+              filter.count++;
+              GStorage.localCache.put(
+                LocalCacheKey.danmakuFilterRules,
+                filter,
+              );
+            }
+            DanmakuFilterHttp.danmakuFilterAdd(
+              filter: extra.mid,
+              type: 2,
+            );
           }
-          DanmakuFilterHttp.danmakuFilterAdd(filter: extra.mid, type: 2);
-        }
-        return DanmakuHttp.danmakuReport(
-          reason: reasonType == 0 ? 11 : reasonType,
-          cid: ctr.cid!,
-          id: extra.id,
-          content: reasonType == 0 ? reasonDesc : null,
-        );
-      });
+          return DanmakuHttp.danmakuReport(
+            reason: reasonType,
+            cid: ctr.cid!,
+            id: extra.id,
+            content: reasonDesc,
+          );
+        },
+      );
     } else {
       return SmartDialog.showToast('请先登录');
     }
@@ -277,6 +285,8 @@ class HeaderControl extends StatefulWidget {
         context,
         ban: false,
         ReportOptions.liveDanmakuReport,
+        withContent: ReportOptions.liveDanmakuReportCheck,
+        contentRequired: ReportOptions.liveDanmakuReportCheck,
         (reasonType, reasonDesc, banUid) {
           // if (banUid) {
           //   final filter = ctr.filters;
@@ -651,6 +661,7 @@ class HeaderControlState extends State<HeaderControl>
                         'srt',
                         'ass',
                         'ssa',
+                        'bcc',
                       ],
                     );
                     if (result != null) {
@@ -658,7 +669,9 @@ class HeaderControlState extends State<HeaderControl>
                       final path = file.path;
                       final name = file.name;
                       final length = videoDetailCtr.subtitles.length;
-                      if (name.toLowerCase().endsWith('.json')) {
+                      final lowerName = name.toLowerCase();
+                      if (lowerName.endsWith('.json') ||
+                          lowerName.endsWith('.bcc')) {
                         final file = File(path);
                         final stream = file.openRead().transform(utf8.decoder);
                         final buffer = StringBuffer();
