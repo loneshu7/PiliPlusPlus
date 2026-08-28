@@ -1,6 +1,6 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-08-26 +08:00
+> 最后核对：2026-08-28 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
@@ -20,12 +20,14 @@
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
 - 已获取并合入的 `upstream/main`：`35e5454a47246c187106b869cd02b9bdbe90c015`
   (`upgrade deps`)。
+- 最新已获取但尚未合入的 `upstream/main`：`797f15453561df696ea73d812b8a5ee4288ef457`
+  (`feat: custom font`)；相对当前分支领先 12 个提交。
 - 最新 R1 实现提交：`a4fd7e7715d38ca2b9c6da5ce727230229236474`
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- 完成本状态提交后，当前分支相对 `upstream/main` 领先 130、落后 0；相对同步起点
-  `release/2.1.10@74b9ad6` 领先 8、落后 0。提交数以实际 `git rev-list` 为准。
+- 当前分支相对最新已获取的 `upstream/main@797f154` 领先 130、落后 12；相对已合入基线
+  `upstream/main@35e5454` 领先 130、落后 0。提交数以实际 `git rev-list` 为准。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
