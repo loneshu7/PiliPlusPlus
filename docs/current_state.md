@@ -1545,6 +1545,8 @@ the final audit artifact. The formal release baseline remains unchanged.
   `ceacf7d356fd01403ac340fc82d52e26245d48d4`。无冲突改动直接接受上游，包括自定义字体导入/删除、
   WebView 生命周期与 Android hybrid composition、分P序号、桌面保存图片复制、Windows 托盘透明度
   修复、Flutter 3.47.2、依赖升级和 import 顺序整理；上游对 mpv 损坏流自动重载的回退也按上游接受。
+- 完整验证通过后，`release/2.1.10` 以 `--ff-only` 前进到同步结果并推送至
+  `origin/release/2.1.10`；未修改 `origin/main`，也未执行 rebase、强推或历史改写。
 - 三个冲突均按本地架构基线人工处理：已被本地可达性清理删除的综合搜索旧页继续保持删除；视频页
   保留本地下拉竖屏全屏、应用内小窗和 `DeviceOrientation` 挂接，仅接受 import 排序；播放器头部保留
   本地后端中立的 `setSuperResolution`、保存封面、轨道/字幕/弹幕和 Media3 菜单，只移植上游统一的
