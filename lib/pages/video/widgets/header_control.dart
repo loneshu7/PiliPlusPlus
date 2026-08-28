@@ -449,7 +449,8 @@ class HeaderControlState extends State<HeaderControl>
                   Icons.stay_current_landscape_outlined,
                   size: 20,
                 ),
-                title: const Text('超分辨率'),
+                title: const Text('超分辨率', style: titleStyle),
+                titleStyle: theme.textTheme.bodyLarge,
                 value: () {
                   final value = plPlayerController.superResolutionType.value;
                   return (value, value.label);
@@ -459,7 +460,7 @@ class HeaderControlState extends State<HeaderControl>
                   plPlayerController.setSuperResolution(value);
                   setState();
                 },
-                descFontSize: 12,
+                descStyle: subTitleStyle,
                 descPosType: .subtitle,
               ),
               if (PlatformUtils.isMobile)
@@ -608,7 +609,8 @@ class HeaderControlState extends State<HeaderControl>
               PopupListTile(
                 dense: true,
                 leading: const Icon(Icons.repeat, size: 20),
-                title: const Text('播放顺序'),
+                title: const Text('播放顺序', style: titleStyle),
+                titleStyle: theme.textTheme.bodyLarge,
                 value: () {
                   final value = plPlayerController.playRepeat;
                   return (value, value.label);
@@ -619,7 +621,7 @@ class HeaderControlState extends State<HeaderControl>
                   setState();
                 },
                 descPosType: .subtitle,
-                descFontSize: 12,
+                descStyle: subTitleStyle,
               ),
               ListTile(
                 dense: true,
