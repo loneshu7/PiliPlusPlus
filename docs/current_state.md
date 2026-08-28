@@ -24,8 +24,8 @@
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- 完成本状态提交后，当前分支相对 `upstream/main@797f154` 领先 133、落后 0；提交数以实际
-  `git rev-list` 为准。
+- 当前分支已完整包含 `upstream/main@797f154`、落后 0；领先提交数以实际 `git rev-list`
+  为准。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
