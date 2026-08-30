@@ -26,9 +26,9 @@
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- 本条最终状态提交计入后，`release/2.1.10` 相对 `upstream/main@44680b8`
-  领先 145、落后 0；本地分支已快进到验证结果，`origin/release/2.1.10` 仍停留在
-  `d216397`，本批尚未推送远程。
+- 本条 GitHub 状态提交计入后，`release/2.1.10` 相对 `upstream/main@44680b8`
+  领先 146、落后 0；该状态提交与本次同步结果一并推送至 `origin/release/2.1.10`，
+  不修改 `origin/main`。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -44,8 +44,9 @@
   `release/2.1.10@d21639782735bca8cb92125342af7fa06d1d17b1` 合入
   `upstream/main@44680b8a486a0518f366a2c9bff6242506cf8783`；同步前状态提交为 `aed1acd`，
   合并提交为 `91b9019ed8330618c866c339de0f9cd06e885068`。普通 merge 无文本冲突，
-  未执行 rebase 或强推；验证完成后本地 `release/2.1.10` 已以 `--ff-only` 前进到
-  状态提交 `99f2b4a`，尚未推送远程。
+  未执行 rebase 或强推；验证完成后本地 `release/2.1.10` 已以 `--ff-only` 前进，完成状态
+  提交为 `199acc2`。本条 GitHub 状态提交与同步结果一并推送至 `origin/release/2.1.10`，
+  不修改 `origin/main`。
 - 本批接受上游动态回复弹窗上下文、比赛页回复弹窗上下文和字体页默认字重修复，有效源码改动仅
   `lib/pages/common/dyn/common_dyn_page.dart`、`lib/pages/match_info/view.dart` 和
   `lib/pages/setting/pages/font_setting.dart`。本地 `SavePanel` 动态 URI 修复与上游 `44680b8`
