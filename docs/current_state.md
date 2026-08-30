@@ -26,8 +26,8 @@
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- `release/2.1.10` 已以 `--ff-only` 前进到验证完成的同步结果；计入本条状态提交后，
-  当前分支相对 `upstream/main@06b8894` 领先 140、落后 0。
+- `release/2.1.10` 已以 `--ff-only` 前进到验证完成的同步结果；计入本条 GitHub 状态提交后，
+  当前分支相对 `upstream/main@06b8894` 领先 141、落后 0。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -70,7 +70,7 @@
   多账号登出，以及 mpv/Media3 系统 PiP、应用内小窗、视频页三组下拉/上滑手势、直播、独立
   音频、前后台与生命周期。自动化通过不能替代这些场景。
 - 验证完成后，`release/2.1.10` 已以 `--ff-only` 合入上述同步分支；未执行 rebase、强推或
-  历史改写，尚未推送远程。
+  历史改写。本条状态提交与同步结果一并推送至 `origin/release/2.1.10`，不修改 `origin/main`。
 
 ## 应用与发布身份
 
