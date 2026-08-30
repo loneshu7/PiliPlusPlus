@@ -8,9 +8,9 @@
 
 ## 仓库基线
 
-- 当前分支：`release/2.1.10`
-- 本次同步起点：`release/2.1.10@e50aff72bea65ec6f11b5c736fd3b49aa56a1e60`
-  (`docs: record pending upstream sync review`)。
+- 当前分支：`sync/upstream-20260830-44680b8`
+- 本次同步起点：`release/2.1.10@d21639782735bca8cb92125342af7fa06d1d17b1`
+  (`docs: record GitHub upstream sync`)。
 - 最新 GitHub 发布源提交：`859d39c4ff3c77c37e1cc1d7131192df8f8b4241`
   (`chore: prepare 2.1.2 release`)
 - 最新功能快照：`0c647b51ae60defc39c6171e5ca9387e43e596d2`
@@ -18,16 +18,16 @@
 - 最新上游合并提交：`6b37cbacf89bde01e69ba5853c5b6ee8ad266bc6`
   (`sync: merge upstream main at 06b8894`)。
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
-- 当前已获取的 `upstream/main`：`06b88943ca5fa787ff797dfa51af0147bee76ca9`
-  (`fix: report info (#2771)`)。
+- 当前已获取的 `upstream/main`：`44680b8a486a0518f366a2c9bff6242506cf8783`
+  (`fix parse dyn uri`)。
 - 已获取并合入的 `upstream/main`：`06b88943ca5fa787ff797dfa51af0147bee76ca9`
   (`fix: report info (#2771)`)。
 - 最新 R1 实现提交：`a4fd7e7715d38ca2b9c6da5ce727230229236474`
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- `release/2.1.10` 已以 `--ff-only` 前进到验证完成的同步结果；计入本条 GitHub 状态提交后，
-  当前分支相对 `upstream/main@06b8894` 领先 141、落后 0。
+- 开始本次同步时，`release/2.1.10@d216397` 相对最新 `upstream/main@44680b8`
+  领先 141、落后 3；当前工作分支用于审查和验证这 3 个上游提交。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -38,6 +38,11 @@
   当前工作区以实际 `git status` 为准。
 
 ## 最新上游同步
+
+- 2026-08-30 已抓取 `upstream/main@44680b8`；相对当前 `d216397` 新增 3 个提交。
+  `git merge-tree --write-tree HEAD upstream/main` 预演无文本冲突；有效合并只修改动态回复上下文、
+  比赛页回复上下文和字体页默认字重 3 个文件。本地 `SavePanel` 动态 URI 修复与上游 `44680b8`
+  完全相同，三方合并会自动消解。本条同步前状态记录提交后再执行实际合并和测试。
 
 - 2026-08-30 在 `sync/upstream-2026-08-30` 从同步前状态
   `e50aff72bea65ec6f11b5c736fd3b49aa56a1e60` 合入 `upstream/main@06b8894`；合并提交为
