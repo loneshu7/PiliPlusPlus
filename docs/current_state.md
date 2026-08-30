@@ -9,25 +9,26 @@
 ## 仓库基线
 
 - 当前分支：`release/2.1.10`
-- 本次同步起点：`release/2.1.10@e50aff72bea65ec6f11b5c736fd3b49aa56a1e60`
-  (`docs: record pending upstream sync review`)。
+- 本次同步起点：`release/2.1.10@d21639782735bca8cb92125342af7fa06d1d17b1`
+  (`docs: record GitHub upstream sync`)。
 - 最新 GitHub 发布源提交：`859d39c4ff3c77c37e1cc1d7131192df8f8b4241`
   (`chore: prepare 2.1.2 release`)
 - 最新功能快照：`0c647b51ae60defc39c6171e5ca9387e43e596d2`
   (`feat: retry decoder failures with software video fallback`)
-- 最新上游合并提交：`6b37cbacf89bde01e69ba5853c5b6ee8ad266bc6`
-  (`sync: merge upstream main at 06b8894`)。
+- 最新上游合并提交：`91b9019ed8330618c866c339de0f9cd06e885068`
+  (`sync: merge upstream main at 44680b8`)。
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
-- 当前已获取的 `upstream/main`：`06b88943ca5fa787ff797dfa51af0147bee76ca9`
-  (`fix: report info (#2771)`)。
-- 已获取并合入的 `upstream/main`：`06b88943ca5fa787ff797dfa51af0147bee76ca9`
-  (`fix: report info (#2771)`)。
+- 当前已获取的 `upstream/main`：`44680b8a486a0518f366a2c9bff6242506cf8783`
+  (`fix parse dyn uri`)。
+- 已获取并合入的 `upstream/main`：`44680b8a486a0518f366a2c9bff6242506cf8783`
+  (`fix parse dyn uri`)。
 - 最新 R1 实现提交：`a4fd7e7715d38ca2b9c6da5ce727230229236474`
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- `release/2.1.10` 已以 `--ff-only` 前进到验证完成的同步结果；计入本条 GitHub 状态提交后，
-  当前分支相对 `upstream/main@06b8894` 领先 141、落后 0。
+- 本条 GitHub 状态提交计入后，`release/2.1.10` 相对 `upstream/main@44680b8`
+  领先 146、落后 0；该状态提交与本次同步结果一并推送至 `origin/release/2.1.10`，
+  不修改 `origin/main`。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -38,6 +39,32 @@
   当前工作区以实际 `git status` 为准。
 
 ## 最新上游同步
+
+- 2026-08-30 在 `sync/upstream-20260830-44680b8` 从
+  `release/2.1.10@d21639782735bca8cb92125342af7fa06d1d17b1` 合入
+  `upstream/main@44680b8a486a0518f366a2c9bff6242506cf8783`；同步前状态提交为 `aed1acd`，
+  合并提交为 `91b9019ed8330618c866c339de0f9cd06e885068`。普通 merge 无文本冲突，
+  未执行 rebase 或强推；验证完成后本地 `release/2.1.10` 已以 `--ff-only` 前进，完成状态
+  提交为 `199acc2`。本条 GitHub 状态提交与同步结果一并推送至 `origin/release/2.1.10`，
+  不修改 `origin/main`。
+- 本批接受上游动态回复弹窗上下文、比赛页回复弹窗上下文和字体页默认字重修复，有效源码改动仅
+  `lib/pages/common/dyn/common_dyn_page.dart`、`lib/pages/match_info/view.dart` 和
+  `lib/pages/setting/pages/font_setting.dart`。本地 `SavePanel` 动态 URI 修复与上游 `44680b8`
+  完全相同，三方合并自动消解；Android 原生、Media3、视频详情页、下拉竖屏全屏和应用内小窗
+  均未被这 3 个上游提交修改，没有新增三类本地差异的上游冲突面。
+- 验证使用 Flutter 3.47.2 / Dart 3.13.2：格式检查通过（1328 文件、0 修改）；`dart analyze`
+  无 error/warning，保留 30 条 info；Flutter 测试 73/73 通过；Android
+  `:app:testDebugUnitTest` 通过；Android `:app:assembleRelease` 通过；`git diff --check` 通过。
+  Gradle 仍输出既有 compileSdk 覆盖、Kotlin 插件迁移和 SDK XML 版本警告，没有测试或构建失败。
+- 同步验证 APK：
+  `build/app/outputs/flutter-apk/pili++-2.1.10-2026082502-universal-release-upstream-44680b8-validation.apk`，
+  大小 69,956,470 字节，SHA-256
+  `6E8F2FF1A7125784ADA2965225BAC87EEB14AFB36D3B6F31C1800317D9CA8EE1`。
+  `tool/verify_release.ps1 -AllowAlreadyDelivered` 已确认 applicationId、应用名、版本、universal
+  ABI 和既有证书；当前 PowerShell 缺少 `Get-FileHash`，本次在进程内临时提供等价 .NET SHA-256
+  函数后脚本通过。该包仅用于同步验证，不交付、不更新发布基线。
+- 本批未执行真机验证；仍需核对动态页和比赛页二级回复弹窗能正确打开，以及字体设置选择“默认”
+  时预览和实际应用均使用正常字重。自动化通过不能替代这些用户场景。
 
 - 2026-08-30 在 `sync/upstream-2026-08-30` 从同步前状态
   `e50aff72bea65ec6f11b5c736fd3b49aa56a1e60` 合入 `upstream/main@06b8894`；合并提交为
