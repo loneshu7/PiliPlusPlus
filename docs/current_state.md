@@ -8,26 +8,26 @@
 
 ## 仓库基线
 
-- 当前分支：`release/2.1.10`
-- 本次同步起点：`release/2.1.10@74b9ad65c2f8e91ef37d0bf3f3904f6694e9d631`
-  (`docs: record Android fix GitHub sync`)。
+- 当前分支：`sync/upstream-2026-08-30`
+- 本次同步起点：`release/2.1.10@e50aff72bea65ec6f11b5c736fd3b49aa56a1e60`
+  (`docs: record pending upstream sync review`)。
 - 最新 GitHub 发布源提交：`859d39c4ff3c77c37e1cc1d7131192df8f8b4241`
   (`chore: prepare 2.1.2 release`)
 - 最新功能快照：`0c647b51ae60defc39c6171e5ca9387e43e596d2`
   (`feat: retry decoder failures with software video fallback`)
-- 最新上游合并提交：`ceacf7d356fd01403ac340fc82d52e26245d48d4`
-  (`sync: merge upstream main at 797f154`)。
+- 最新上游合并提交：`6b37cbacf89bde01e69ba5853c5b6ee8ad266bc6`
+  (`sync: merge upstream main at 06b8894`)。
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
 - 当前已获取的 `upstream/main`：`06b88943ca5fa787ff797dfa51af0147bee76ca9`
   (`fix: report info (#2771)`)。
-- 已获取并合入的 `upstream/main`：`797f15453561df696ea73d812b8a5ee4288ef457`
-  (`feat: custom font`)。
+- 已获取并合入的 `upstream/main`：`06b88943ca5fa787ff797dfa51af0147bee76ca9`
+  (`fix: report info (#2771)`)。
 - 最新 R1 实现提交：`a4fd7e7715d38ca2b9c6da5ce727230229236474`
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- 当前分支已完整包含 `upstream/main@797f154`；相对当前已获取的
-  `upstream/main@06b8894`，领先 135、落后 11。
+- 当前同步分支已完整包含 `upstream/main@06b8894`，相对上游领先 139、落后 0；
+  合入 `release/2.1.10` 后应重新按实际 `git rev-list` 更新计数。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -37,20 +37,38 @@
   合并提交 `03ed055` 已包含上游新增的 `810c26a`、`f73b9c9`、`f8b9ef3` 三个提交。
   当前工作区以实际 `git status` 为准。
 
-## 最新上游差距审查
+## 最新上游同步
 
-- 2026-08-30 已逐项审查 `HEAD..upstream/main` 的 11 个上游独有提交；主要内容为自定义
-  字体设置重构、移动端复制下载缓存路径、可选文本补丁修复、依赖升级、列表/骨架性能整理、
-  账号登出与错误报告修复。上游未修改 Android 原生、Media3 桥接、视频详情主页面、下拉
-  竖屏全屏或应用内小窗模块。
-- 只读 `git merge-tree --write-tree HEAD upstream/main` 预演显示两处文本冲突：已由本地删除的
-  `lib/pages/search_panel/all/view.dart` 被上游修改，以及 `lib/plugin/pl_player/controller.dart`
-  的系统 PiP 入口。同步时前者应继续保持删除；后者必须保留本地 mpv/Media3 后端中立的
-  尺寸读取和 PiP 语义，不能采用上游仅匹配 `NativePlayer` 的实现。
-- 上游 `9624c37` 的动态分享重构存在已核实风险：`SavePanel.initState` 调用 `_parseDyn(i)`
-  却未把返回值赋给字段 `uri`，会令动态分享二维码使用空字符串；同步时需补为
-  `uri = _parseDyn(i)` 并增加回归验证。字体持久化改为单一 `customFont.otf`，未见旧多字体
-  数据迁移；依赖同步还需审查 `flutter_html` Git `dev` 分支及文件选择器升级。
+- 2026-08-30 在 `sync/upstream-2026-08-30` 从同步前状态
+  `e50aff72bea65ec6f11b5c736fd3b49aa56a1e60` 合入 `upstream/main@06b8894`；合并提交为
+  `6b37cbacf89bde01e69ba5853c5b6ee8ad266bc6`。本批包含自定义字体设置重构、移动端复制
+  下载缓存路径、可选文本补丁修复、依赖升级、列表/骨架性能整理、账号登出与错误报告修复；
+  上游未修改 Android 原生、Media3 桥接、视频详情主页面、下拉竖屏全屏或应用内小窗模块。
+- 两处冲突已人工解决：继续删除本地已证明不可达的旧
+  `lib/pages/search_panel/all/view.dart`；`lib/plugin/pl_player/controller.dart` 保留本地
+  mpv/Media3 后端中立的系统 PiP 尺寸读取和触发语义，未采用上游仅匹配 `NativePlayer` 的实现。
+  自动合并后的 `pubspec.yaml` 保留 `pili++` 版本与身份，同时接受上游 `flutter_html` Git
+  `dev` 分支和依赖升级。
+- 已核实并修复上游 `9624c37` 的动态分享回归：`SavePanel.initState` 现在把 `_parseDyn(i)`
+  返回值写入字段 `uri`，修复提交为 `0f40aaefd643d3f9ce56f8019af1d47dcffc71c8`。上游字体持久化
+  改为单一 `customFont.otf`，未提供旧多字体数据迁移；旧自定义字体升级行为仍需真机/真实数据
+  验证，不在本次同步中建立普通功能的长期本地分叉。
+- 验证使用 `D:\CodexToolchains\PiliPlus\flutter-sdk\flutter-3.47.2`（Flutter 3.47.2、
+  Dart 3.13.2）；旧的无版本目录当前实际为 Flutter 3.44.8，不满足项目 Dart SDK 下限。
+  `dart format --output=none --set-exit-if-changed lib test` 通过（1328 文件、0 修改）；
+  `dart analyze` 无 error/warning，保留 30 条 info；Flutter 测试 73/73 通过；Android
+  `:app:testDebugUnitTest` 通过；Android `:app:assembleRelease` 通过；`git diff --check` 通过。
+  `android_file_picker` 升级后首次 Debug/Release 编译遇到旧 Kotlin 增量缓存路径错误，清理该
+  生成目录并以 `-Pkotlin.incremental=false` 重跑后均通过；不是源码或测试断言失败。
+- 同步验证 APK：
+  `build/app/outputs/flutter-apk/pili++-2.1.10-2026082502-universal-release-upstream-06b8894-validation.apk`，
+  大小 69,943,900 字节，SHA-256
+  `ED42F12591385790BC5D7BB2F404CD83467A9F2074BE2221FB023E36C7E42225`。
+  `tool/verify_release.ps1 -AllowAlreadyDelivered` 已确认 applicationId、应用名、版本、
+  universal ABI 和既有证书；该包仅用于同步验证，不交付、不更新发布基线。
+- 待真机回归：字体导入/切换和旧字体数据、移动端复制缓存路径、动态分享二维码、文本选择、
+  多账号登出，以及 mpv/Media3 系统 PiP、应用内小窗、视频页三组下拉/上滑手势、直播、独立
+  音频、前后台与生命周期。自动化通过不能替代这些场景。
 
 ## 应用与发布身份
 
@@ -181,11 +199,11 @@
   仍明确不适配，新增 shelf 与多段 equalizer 仍需真机与 mpv 做听感、切换、后台、小窗和 PiP
   对照。
 
-- 2026-08-08 已恢复并确认固定构建工具链：Flutter/Dart 来自
-  `D:\CodexToolchains\PiliPlus\flutter-sdk\flutter`，JDK 17 来自
-  `D:\CodexToolchains\PiliPlus\jdk\jdk-17.0.19+10`，Android SDK 来自
-  `D:\CodexToolchains\PiliPlus\android-sdk`。此前裸命令提示缺少 `dart`/`flutter`/`java`
-  是当前终端未继承这些路径和 `JAVA_HOME`，不是工具链或仓库被删除。
+- 2026-08-08 当时恢复的无版本工具链路径为
+  `D:\CodexToolchains\PiliPlus\flutter-sdk\flutter`；截至 2026-08-30 该目录实际为 Flutter
+  3.44.8，已不满足项目 SDK 下限。当前验证必须使用顶部记录的版本化 Flutter 3.47.2 路径；
+  JDK 17 与 Android SDK 路径仍分别为 `D:\CodexToolchains\PiliPlus\jdk\jdk-17.0.19+10` 和
+  `D:\CodexToolchains\PiliPlus\android-sdk`。
 - 本次高通滤镜修改的 Dart 定向测试已通过 17/17；`:app` 的
   `AudioNormalizationProcessorTest` 已通过 4/4。Gradle 输出仍有既有插件弃用和 SDK XML
   版本警告，但没有测试失败。全量 `flutter test --no-pub --concurrency=1` 已通过 50/50，
