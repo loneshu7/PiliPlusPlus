@@ -1,6 +1,6 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-08-28 +08:00
+> 最后核对：2026-08-30 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
@@ -18,14 +18,16 @@
 - 最新上游合并提交：`ceacf7d356fd01403ac340fc82d52e26245d48d4`
   (`sync: merge upstream main at 797f154`)。
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
+- 当前已获取的 `upstream/main`：`06b88943ca5fa787ff797dfa51af0147bee76ca9`
+  (`fix: report info (#2771)`)。
 - 已获取并合入的 `upstream/main`：`797f15453561df696ea73d812b8a5ee4288ef457`
   (`feat: custom font`)。
 - 最新 R1 实现提交：`a4fd7e7715d38ca2b9c6da5ce727230229236474`
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- 当前分支已完整包含 `upstream/main@797f154`、落后 0；领先提交数以实际 `git rev-list`
-  为准。
+- 当前分支已完整包含 `upstream/main@797f154`；相对当前已获取的
+  `upstream/main@06b8894`，领先 135、落后 11。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -34,6 +36,21 @@
 - 本次上游同步前的本地 CI 修复已提交为 `4207fb2`，成功 Android CI 记录为 `1582a5b`；
   合并提交 `03ed055` 已包含上游新增的 `810c26a`、`f73b9c9`、`f8b9ef3` 三个提交。
   当前工作区以实际 `git status` 为准。
+
+## 最新上游差距审查
+
+- 2026-08-30 已逐项审查 `HEAD..upstream/main` 的 11 个上游独有提交；主要内容为自定义
+  字体设置重构、移动端复制下载缓存路径、可选文本补丁修复、依赖升级、列表/骨架性能整理、
+  账号登出与错误报告修复。上游未修改 Android 原生、Media3 桥接、视频详情主页面、下拉
+  竖屏全屏或应用内小窗模块。
+- 只读 `git merge-tree --write-tree HEAD upstream/main` 预演显示两处文本冲突：已由本地删除的
+  `lib/pages/search_panel/all/view.dart` 被上游修改，以及 `lib/plugin/pl_player/controller.dart`
+  的系统 PiP 入口。同步时前者应继续保持删除；后者必须保留本地 mpv/Media3 后端中立的
+  尺寸读取和 PiP 语义，不能采用上游仅匹配 `NativePlayer` 的实现。
+- 上游 `9624c37` 的动态分享重构存在已核实风险：`SavePanel.initState` 调用 `_parseDyn(i)`
+  却未把返回值赋给字段 `uri`，会令动态分享二维码使用空字符串；同步时需补为
+  `uri = _parseDyn(i)` 并增加回归验证。字体持久化改为单一 `customFont.otf`，未见旧多字体
+  数据迁移；依赖同步还需审查 `flutter_html` Git `dev` 分支及文件选择器升级。
 
 ## 应用与发布身份
 
