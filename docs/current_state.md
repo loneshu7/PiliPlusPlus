@@ -8,7 +8,7 @@
 
 ## 仓库基线
 
-- 当前分支：`sync/upstream-2026-08-30`
+- 当前分支：`release/2.1.10`
 - 本次同步起点：`release/2.1.10@e50aff72bea65ec6f11b5c736fd3b49aa56a1e60`
   (`docs: record pending upstream sync review`)。
 - 最新 GitHub 发布源提交：`859d39c4ff3c77c37e1cc1d7131192df8f8b4241`
@@ -26,8 +26,8 @@
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- 当前同步分支已完整包含 `upstream/main@06b8894`，相对上游领先 139、落后 0；
-  合入 `release/2.1.10` 后应重新按实际 `git rev-list` 更新计数。
+- `release/2.1.10` 已以 `--ff-only` 前进到验证完成的同步结果；计入本条状态提交后，
+  当前分支相对 `upstream/main@06b8894` 领先 140、落后 0。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -69,6 +69,8 @@
 - 待真机回归：字体导入/切换和旧字体数据、移动端复制缓存路径、动态分享二维码、文本选择、
   多账号登出，以及 mpv/Media3 系统 PiP、应用内小窗、视频页三组下拉/上滑手势、直播、独立
   音频、前后台与生命周期。自动化通过不能替代这些场景。
+- 验证完成后，`release/2.1.10` 已以 `--ff-only` 合入上述同步分支；未执行 rebase、强推或
+  历史改写，尚未推送远程。
 
 ## 应用与发布身份
 
