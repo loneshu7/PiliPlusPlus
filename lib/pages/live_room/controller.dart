@@ -32,6 +32,7 @@ import 'package:PiliPlus/utils/connectivity_utils.dart';
 import 'package:PiliPlus/utils/danmaku_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
+import 'package:PiliPlus/utils/extension/rx_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -45,6 +46,10 @@ import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
+
+const int _kMaxChatCount = 500;
+const int _kTrimCount = _kMaxChatCount + 50;
+const int _kSafeTrimIndex = 200;
 
 class LiveRoomController extends GetxController {
   LiveRoomController(this.heroTag);
@@ -148,6 +153,21 @@ class LiveRoomController extends GetxController {
     }
     return const SizedBox.shrink();
   });
+
+  int chatSimpleIndex = 0;
+  int _trimDmIndex = 0;
+  int get trimDmIndex => _trimDmIndex;
+  void _trimDm() {
+    final trimCount = messages.length - _trimDmIndex;
+    if (trimCount > _kTrimCount) {
+      final endIndex = messages.length - _kMaxChatCount;
+      final canTrim = (chatSimpleIndex - endIndex) > _kSafeTrimIndex;
+      if (canTrim) {
+        messages.fillRangeOnly(_trimDmIndex, endIndex);
+        _trimDmIndex = endIndex;
+      }
+    }
+  }
 
   void _onSizeChanged(Size value) {
     final isVertical = value.height > value.width;
@@ -505,6 +525,8 @@ class LiveRoomController extends GetxController {
   }
 
   void addDm(dynamic msg, [DanmakuContentItem<DanmakuExtra>? item]) {
+    _trimDm();
+
     if (plPlayerController.showDanmaku) {
       if (item != null && plPlayerController.enableShowLiveDanmaku.value) {
         danmakuController?.addDanmaku(item);
@@ -702,7 +724,7 @@ class LiveRoomController extends GetxController {
             ? const Duration(milliseconds: 400)
             : PlatformUtils.isDesktop
             ? const Duration(milliseconds: 350)
-            : const Duration(milliseconds: 500),
+            : const Duration(milliseconds: 400),
       ),
     );
   }

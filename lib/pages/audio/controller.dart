@@ -17,6 +17,8 @@ import 'package:PiliPlus/grpc/bilibili/app/listener/v1.pb.dart'
 import 'package:PiliPlus/http/browser_ua.dart';
 import 'package:PiliPlus/http/constants.dart';
 import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/models/common/audio_normalization.dart';
+import 'package:PiliPlus/models/video/play/url.dart' as http_model show Volume;
 import 'package:PiliPlus/pages/common/common_intro_controller.dart'
     show FavMixin;
 import 'package:PiliPlus/pages/audio/exo_audio_event_tracker.dart';
@@ -29,6 +31,7 @@ import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/triple_mixin.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/exo_player/exo_player_controller.dart';
+import 'package:PiliPlus/plugin/pl_player/models/audio_normalization_filter.dart';
 import 'package:PiliPlus/plugin/pl_player/models/player_media_track.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
@@ -62,7 +65,8 @@ class AudioController extends GetxController
         TripleMixin,
         FavMixin,
         BlockConfigMixin,
-        BlockMixin {
+        BlockMixin,
+        AudioNormalizationMixin {
   late Int64 id;
   late Int64 oid;
   late List<Int64> subId;
@@ -245,7 +249,12 @@ class AudioController extends GetxController
     final hasAudioUrl = audioUrl != null;
     if (hasAudioUrl) {
       _querySponsorBlock();
-      _onOpenMedia(audioUrl, ua: BrowserUa.pc, referer: HttpString.baseUrl);
+      _onOpenMedia(
+        audioUrl,
+        ua: BrowserUa.pc,
+        referer: HttpString.baseUrl,
+        volume: _videoDetailController?.volume,
+      );
     }
     ConnectivityUtils.isWiFi.then((isWiFi) {
       cacheAudioQa = isWiFi ? Pref.defaultAudioQa : Pref.defaultAudioQaCellular;
@@ -394,6 +403,19 @@ class AudioController extends GetxController
   void _onPlay(PlayURLResp data) {
     final PlayInfo? playInfo = data.playerInfo.values.firstOrNull;
     if (playInfo != null) {
+      http_model.Volume? volume;
+      if (playInfo.hasVolume()) {
+        final volumeInfo = playInfo.volume;
+        volume = http_model.Volume(
+          measuredI: volumeInfo.measuredI,
+          measuredLra: volumeInfo.measuredLra,
+          measuredTp: volumeInfo.measuredTp,
+          measuredThreshold: volumeInfo.measuredThreshold,
+          targetOffset: volumeInfo.targetOffset,
+          targetI: volumeInfo.targetI,
+          targetTp: volumeInfo.targetTp,
+        );
+      }
       if (playInfo.hasPlayDash()) {
         final playDash = playInfo.playDash;
         final audios = playDash.audio;
@@ -405,7 +427,7 @@ class AudioController extends GetxController
           (e) => e.id <= cacheAudioQa,
           (a, b) => a.id > b.id ? a : b,
         );
-        _onOpenMedia(VideoUtils.getCdnUrl(audio.playUrls));
+        _onOpenMedia(VideoUtils.getCdnUrl(audio.playUrls), volume: volume);
       } else if (playInfo.hasPlayUrl()) {
         final playUrl = playInfo.playUrl;
         final durls = playUrl.durl;
@@ -414,8 +436,43 @@ class AudioController extends GetxController
         }
         final durl = durls.first;
         position.value = 0;
-        _onOpenMedia(VideoUtils.getCdnUrl(durl.playUrls));
+        _onOpenMedia(VideoUtils.getCdnUrl(durl.playUrls), volume: volume);
       }
+    }
+  }
+
+  String? _lastUnsupportedExoAudioNormalization;
+
+  Map<String, Object>? _resolveExoAudioNormalization(
+    http_model.Volume? volume,
+  ) {
+    if (!enableAudioNormalization) return null;
+    final resolution = resolveExoAudioNormalization(
+      config: Pref.audioNormalization,
+      fallbackConfig: Pref.fallbackNormalization,
+      volume: volume,
+    );
+    switch (resolution) {
+      case ExoAudioNormalizationConfiguration():
+        _lastUnsupportedExoAudioNormalization = null;
+        return resolution.toMap();
+      case ExoAudioDynamicNormalizationConfiguration():
+        _lastUnsupportedExoAudioNormalization = null;
+        return resolution.toMap();
+      case UnsupportedExoAudioNormalization(
+        :final filter,
+        :final unsupportedStage,
+      ):
+        if (_lastUnsupportedExoAudioNormalization != filter) {
+          _lastUnsupportedExoAudioNormalization = filter;
+          SmartDialog.showToast(
+            '音量均衡滤镜「${unsupportedStage ?? filter}」尚未适配 ExoPlayer，已保持原始音频',
+          );
+        }
+        return null;
+      case null:
+        _lastUnsupportedExoAudioNormalization = null;
+        return null;
     }
   }
 
@@ -423,9 +480,15 @@ class AudioController extends GetxController
     String url, {
     String ua = Constants.userAgentApp,
     String? referer,
+    http_model.Volume? volume,
   }) {
     unawaited(
-      _openMedia(url, ua: ua, referer: referer).onError((error, stackTrace) {
+      _openMedia(
+        url,
+        ua: ua,
+        referer: referer,
+        volume: volume,
+      ).onError((error, stackTrace) {
         SmartDialog.showToast('音频播放失败');
         Utils.reportError(
           'Standalone audio open failed: $error',
@@ -439,6 +502,7 @@ class AudioController extends GetxController
     String url, {
     required String ua,
     String? referer,
+    http_model.Volume? volume,
   }) async {
     await _initPlayerIfNeeded();
     if (!playerReady) return;
@@ -456,15 +520,17 @@ class AudioController extends GetxController
           },
           position: _start ?? Duration.zero,
           playWhenReady: true,
+          audioNormalization: _resolveExoAudioNormalization(volume),
         );
       } else {
+        final extras = audioFilterExtras(volume);
         player
           ?..setMediaHeader(
             userAgent: ua,
             // mpv cannot clear referer option
             headers: {'Referer': ?referer},
           )
-          ..open(Media(url, start: _start));
+          ..open(Media(url, start: _start, extras: extras));
       }
     } catch (_) {
       await audioSessionHandler?.setActive(false);
@@ -510,6 +576,7 @@ class AudioController extends GetxController
     player = await Player.create(
       configuration: PlayerConfiguration(
         options: {
+          if (Platform.isAndroid) 'ao': Pref.audioOutput,
           'volume': PlatformUtils.isDesktop
               ? (desktopVolume.value * 100).toString()
               : Pref.playerVolume.toString(),

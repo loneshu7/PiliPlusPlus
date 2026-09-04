@@ -33,9 +33,7 @@ class RefreshLayout
   };
 
   @override
-  SlottedContainerRenderObjectMixin<RefreshType, RenderBox> createRenderObject(
-    BuildContext context,
-  ) {
+  RenderRefreshLayout createRenderObject(BuildContext context) {
     return RenderRefreshLayout(
       scale: scale,
       position: position,

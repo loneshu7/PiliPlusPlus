@@ -10,6 +10,7 @@ import 'package:PiliPlus/http/constants.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/models/common/account_type.dart';
+import 'package:PiliPlus/models/common/audio_normalization.dart';
 import 'package:PiliPlus/models/common/super_resolution_type.dart';
 import 'package:PiliPlus/models/common/video/video_type.dart';
 import 'package:PiliPlus/models/user/danmaku_rule.dart';
@@ -77,7 +78,7 @@ import 'package:window_manager/window_manager.dart';
 
 typedef PlayCallback = Future<void>? Function();
 
-class PlPlayerController with BlockConfigMixin {
+class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   Player? _videoPlayerController;
   MpvPlayerView? _mpvPlayerView;
   ExoPlayerController? _exoPlayerController;
@@ -939,27 +940,14 @@ class PlPlayerController with BlockConfigMixin {
   // offline
   bool get isFileSource => dataSource is FileSource;
 
-  late final _audioNormalization = Pref.audioNormalization;
-  late final enableAudioNormalization =
-      Platform.isAndroid && _audioNormalization != '0';
+  late final _exoAudioNormalizationConfig = Pref.audioNormalization;
   Volume? _normalizationVolume;
   String? _lastUnsupportedExoAudioNormalization;
-
-  static final loudnormRegExp = RegExp('loudnorm=([^,]+)');
-
-  String? _resolveAudioNormalizationFilter(Volume? volume) {
-    if (!enableAudioNormalization) return null;
-    return resolveAudioNormalizationFilter(
-      config: _audioNormalization,
-      fallbackConfig: Pref.fallbackNormalization,
-      volume: volume,
-    );
-  }
 
   Map<String, Object>? _resolveExoAudioNormalization(Volume? volume) {
     if (!enableAudioNormalization) return null;
     final resolution = resolveExoAudioNormalization(
-      config: _audioNormalization,
+      config: _exoAudioNormalizationConfig,
       fallbackConfig: Pref.fallbackNormalization,
       volume: volume,
     );
@@ -1291,10 +1279,7 @@ class PlPlayerController with BlockConfigMixin {
             // '!delay_open,media_type=audio;'
             '%${isFileSource ? utf8.encode(audio).length : audio.length}%$audio');
       }
-      final audioNormalization = _resolveAudioNormalizationFilter(volume);
-      if (audioNormalization != null) {
-        extras['lavfi-complex'] = '"[aid1] $audioNormalization [ao]"';
-      }
+      audioFilterExtras(volume, map: extras);
     }
 
     await player.open(
