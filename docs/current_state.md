@@ -15,19 +15,17 @@
   (`chore: prepare 2.1.2 release`)
 - 最新功能快照：`0c647b51ae60defc39c6171e5ca9387e43e596d2`
   (`feat: retry decoder failures with software video fallback`)
-- 最新上游合并提交：`245cd8788c586548ad7baa5e521d9aa438f7733b`
-  (`sync: merge upstream main at 5c7cb99`)。
+- 最新上游合并提交：`a86e54649d403f11b089ca293ab82052bad776cc`
+  (`sync: merge upstream main at 9cc3bb2`)。
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
-- 当前已获取的 `upstream/main`：`9cc3bb2c80d2e6dc0fb2a647ea5658e7d95ff762`
+- 当前已获取并合入的 `upstream/main`：`9cc3bb2c80d2e6dc0fb2a647ea5658e7d95ff762`
   (`fix cupertino patch`)。
-- 当前已合入的 `upstream/main`：`5c7cb99b68526d0096f09060577d46ff5926db85`
-  (`feat(shutdown_timer_service): show remaining time (#2461)`)。
 - 最新 R1 实现提交：`a4fd7e7715d38ca2b9c6da5ce727230229236474`
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- 本条状态提交计入后，临时同步分支相对 `upstream/main@9cc3bb2` 领先 149、落后 6；
-  已验证的第一阶段同步结果尚未推送远程，继续合入新增上游提交。
+- 本条完成状态提交计入后，`release/2.1.10` 相对 `upstream/main@9cc3bb2` 领先 151、
+  落后 0；同步结果尚未推送远程。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -39,34 +37,43 @@
 
 ## 最新上游同步
 
-- 2026-09-04 在 `sync/upstream-20260904-5c7cb99` 从
-  `release/2.1.10@f99d227bf5869fbc87548a548273c07c42ccbe95` 合入
-  `upstream/main@5c7cb99b68526d0096f09060577d46ff5926db85`；同步前状态提交为 `b7c90e0`，
-  合并提交为 `245cd8788c586548ad7baa5e521d9aa438f7733b`。未执行 rebase、强推或远程推送。
-- 本批接受 20 个上游提交中的字体权重、独立音频响度均衡、账号/Cookie、视频详情 WBI 接口、
+- 2026-09-04 在 `sync/upstream-20260904-9cc3bb2` 从
+  `release/2.1.10@f99d227bf5869fbc87548a548273c07c42ccbe95` 分两阶段合入
+  `upstream/main@9cc3bb2c80d2e6dc0fb2a647ea5658e7d95ff762`：同步前状态提交为 `b7c90e0`，
+  第一阶段合并提交为 `245cd8788c586548ad7baa5e521d9aa438f7733b`，新增 6 个提交后的第二阶段
+  合并提交为 `a86e54649d403f11b089ca293ab82052bad776cc`。未执行 rebase、强推或远程推送；
+  验证完成后本地 `release/2.1.10` 以 `--ff-only` 前进。
+- 本批共接受 26 个上游提交：字体权重、独立音频响度均衡、账号/Cookie、视频详情 WBI 接口、
   弹幕下载并发、关注排序、发布输入面板、文章操作、直播聊天裁剪、评论 LaTeX 转 Unicode、
-  定时关闭倒计时、iOS 加密声明和 Android Provider authority 调整；本地 Android-only CI
-  继续保留 push、PR 和手动触发，没有恢复非 Android 构建。
-- 6 个文本冲突均已人工融合：`RefreshLayout` 接受上游窄返回类型并保留动态 displacement；
-  独立音频把上游 PlayInfo 响度参数同时接入 mpv `lavfi-complex` 和 Media3 原生音频处理器；
-  直播接受有界聊天列表并保留后端中立 `Size` 监听；视频设置面板保留稍后再看、笔记、离线缓存
-  和 Media3 公共控制入口，并把上游倒计时挂到真实定时关闭项；`PlPlayerController` 复用上游
-  `AudioNormalizationMixin`，同时保留 Media3 滤镜映射和不支持阶段提示。应用内小窗、下拉
-  竖屏全屏、Media3 Kotlin 桥接和发布身份没有被上游覆盖。
-- 验证使用 Flutter 3.47.2 / Dart 3.13.2：格式检查通过（1332 文件、0 修改）；`dart analyze`
-  无 error/warning，保留 34 条 info；Flutter 测试 75/75 通过；Android JVM 测试 30/30 通过；
-  Android Release 构建和 `git diff --check` 通过。首次 Flutter Release 构建命中既有
-  `android_file_picker` Kotlin 增量缓存跨盘符错误；停止旧构建进程、清理生成缓存并以
-  `-Pkotlin.incremental=false -Pkotlin.compiler.execution.strategy=in-process` 重跑后通过。
-- 同步验证 APK：
-  `build/app/outputs/flutter-apk/pili++-2.1.10-2026082502-universal-release-upstream-5c7cb99-validation.apk`，
-  大小 70,049,902 字节，SHA-256
-  `19239792D4EA63402EFDA95664F50784C49D5ECB9376B34D344E60D817599213`。
+  定时关闭倒计时、画质可用性与补充请求、稍后再看初始化、直播聊天初始索引、依赖升级、
+  Cupertino 补丁修复、iOS 加密声明和 Android Provider authority 调整等。Linux 代码仅随上游
+  保留，不纳入当前 Android 支持范围；本地 Android-only CI 继续保留 push、PR 和手动触发。
+- 第一阶段 6 个文本冲突均已人工融合：`RefreshLayout` 接受上游窄返回类型并保留动态
+  displacement；独立音频把 PlayInfo 响度参数同时接入 mpv `lavfi-complex` 和 Media3 原生
+  音频处理器；直播接受有界聊天列表并保留后端中立 `Size` 监听；视频设置面板保留稍后再看、
+  笔记、离线缓存和 Media3 公共控制入口，并把倒计时挂到真实定时关闭项；
+  `PlPlayerController` 复用上游 `AudioNormalizationMixin`，同时保留 Media3 滤镜映射和
+  不支持阶段提示。
+- 第二阶段 3 个文本冲突均已人工融合：接受上游基于真实 DASH 轨道判断画质可用性、缺失画质
+  补充请求和新版上下行模型；保留本地 `initializePlayer: false` 与 `playWhenReady` 继承语义，
+  因此应用内小窗恢复仍只刷新媒体信息并接回同一播放器会话；设置面板和底部画质菜单仍通过
+  后端中立控制器换源。应用内小窗、下拉竖屏全屏、Media3 Kotlin 桥接和发布身份未被覆盖。
+- 最终验证使用 Flutter 3.47.2 / Dart 3.13.2：格式检查通过（1332 文件、0 修改）；
+  `dart analyze` 无 error/warning，保留 34 条 info；Flutter 测试 75/75 通过；Android JVM
+  测试 30/30 通过；Android Release 全量重跑构建和 `git diff --check` 通过。依赖升级后先对
+  `material_ui 1.1.1` 重新应用仓库 Android 补丁；构建继续使用
+  `-Pkotlin.incremental=false -Pkotlin.compiler.execution.strategy=in-process`，避免既有
+  `android_file_picker` Kotlin 增量缓存跨盘符错误。
+- 最终同步验证 APK：
+  `build/app/outputs/flutter-apk/pili++-2.1.10-2026082502-universal-release-upstream-9cc3bb2-validation.apk`，
+  大小 70,076,593 字节，SHA-256
+  `D0D1685692CE5FAED63F50828B4E758FD45569808CAC1415F5A7D974E6966044`。
   `tool/verify_release.ps1 -AllowAlreadyDelivered` 已确认 applicationId、应用名、版本、universal
   ABI 和既有证书；当前 PowerShell 缺少 `Get-FileHash`，本次仅在进程内临时提供等价 .NET
   SHA-256 函数。该包仅用于同步验证，不交付、不更新发布基线。
-- 本批未执行真机验证；待回归视频详情 WBI、账号切换/Cookie、独立音频响度均衡、直播聊天、
-  定时关闭倒计时，以及 mpv/Media3 点播与直播、应用内小窗、系统 PiP 和下拉/上滑手势。
+- 本批未执行真机验证；待回归视频详情 WBI 与画质列表/切换、账号切换/Cookie、独立音频响度
+  均衡、直播聊天、定时关闭倒计时，以及 mpv/Media3 点播与直播、应用内小窗恢复、系统 PiP
+  和下拉/上滑手势。自动化通过不能替代这些用户场景。
 - 2026-08-30 在 `sync/upstream-20260830-44680b8` 从
   `release/2.1.10@d21639782735bca8cb92125342af7fa06d1d17b1` 合入
   `upstream/main@44680b8a486a0518f366a2c9bff6242506cf8783`；同步前状态提交为 `aed1acd`，
