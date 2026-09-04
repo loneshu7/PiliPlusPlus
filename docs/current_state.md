@@ -24,8 +24,8 @@
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- 本条完成状态提交计入后，`release/2.1.10` 相对 `upstream/main@9cc3bb2` 领先 151、
-  落后 0；同步结果尚未推送远程。
+- 本条 GitHub 状态提交计入后，`release/2.1.10` 相对 `upstream/main@9cc3bb2` 领先 152、
+  落后 0；同步结果已推送至 `origin/release/2.1.10`，不修改 `origin/main`。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -41,8 +41,9 @@
   `release/2.1.10@f99d227bf5869fbc87548a548273c07c42ccbe95` 分两阶段合入
   `upstream/main@9cc3bb2c80d2e6dc0fb2a647ea5658e7d95ff762`：同步前状态提交为 `b7c90e0`，
   第一阶段合并提交为 `245cd8788c586548ad7baa5e521d9aa438f7733b`，新增 6 个提交后的第二阶段
-  合并提交为 `a86e54649d403f11b089ca293ab82052bad776cc`。未执行 rebase、强推或远程推送；
-  验证完成后本地 `release/2.1.10` 以 `--ff-only` 前进。
+  合并提交为 `a86e54649d403f11b089ca293ab82052bad776cc`。未执行 rebase 或强推；验证完成后
+  本地 `release/2.1.10` 以 `--ff-only` 前进，并将同步结果推送至
+  `origin/release/2.1.10`，不修改 `origin/main`。
 - 本批共接受 26 个上游提交：字体权重、独立音频响度均衡、账号/Cookie、视频详情 WBI 接口、
   弹幕下载并发、关注排序、发布输入面板、文章操作、直播聊天裁剪、评论 LaTeX 转 Unicode、
   定时关闭倒计时、画质可用性与补充请求、稍后再看初始化、直播聊天初始索引、依赖升级、
