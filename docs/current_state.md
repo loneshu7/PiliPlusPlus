@@ -1,6 +1,6 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-08-30 +08:00
+> 最后核对：2026-09-04 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
@@ -18,17 +18,25 @@
 - 最新上游合并提交：`91b9019ed8330618c866c339de0f9cd06e885068`
   (`sync: merge upstream main at 44680b8`)。
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
-- 当前已获取的 `upstream/main`：`44680b8a486a0518f366a2c9bff6242506cf8783`
-  (`fix parse dyn uri`)。
+- 当前已获取的 `upstream/main`：`5c7cb99b68526d0096f09060577d46ff5926db85`
+  (`feat(shutdown_timer_service): show remaining time (#2461)`)。
 - 已获取并合入的 `upstream/main`：`44680b8a486a0518f366a2c9bff6242506cf8783`
   (`fix parse dyn uri`)。
 - 最新 R1 实现提交：`a4fd7e7715d38ca2b9c6da5ce727230229236474`
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- 本条 GitHub 状态提交计入后，`release/2.1.10` 相对 `upstream/main@44680b8`
-  领先 146、落后 0；该状态提交与本次同步结果一并推送至 `origin/release/2.1.10`，
-  不修改 `origin/main`。
+- 截至 2026-09-04，本地 `release/2.1.10` 相对 `upstream/main@5c7cb99`
+  领先 146、落后 20；merge-base 仍为已合入的 `upstream/main@44680b8`。
+- 这 20 个待同步提交主要涉及字体权重、独立音频响度均衡、账号/Cookie、视频详情 WBI 接口、
+  弹幕下载并发、关注排序、发布输入面板、文章操作、直播聊天、评论 LaTeX 转 Unicode 和定时关闭
+  倒计时；另含 iOS 加密声明、上游 CI 触发方式和 Android Provider authority 调整。
+- 2026-09-04 使用非破坏性的 `git merge-tree --write-tree HEAD upstream/main` 预检，预计产生 6 个
+  文本冲突：`.github/workflows/build.yml`、`lib/common/widgets/refresh_layout.dart`、
+  `lib/pages/audio/controller.dart`、`lib/pages/live_room/controller.dart`、
+  `lib/pages/video/widgets/header_control.dart`、`lib/plugin/pl_player/controller.dart`。后四处直接
+  重叠本地 Media3 独立音频、直播、播放器控制与公共后端适配，必须逐项人工合并；尚未实际同步
+  或运行同步后验证。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
