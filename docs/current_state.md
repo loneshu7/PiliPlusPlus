@@ -1,6 +1,6 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-09-04 +08:00
+> 最后核对：2026-09-05 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
@@ -8,24 +8,33 @@
 
 ## 仓库基线
 
+- 2026-09-05 已在临时分支 `sync/upstream-20260905-4d66b7b` 完成 8 个上游提交的合并与自动化
+  验证，合并提交为 `abd8ede5c4c541109199377c14414f21ad2035ed`。本条完成状态提交计入后，
+  相对 `upstream/main@4d66b7b638c9cb9d533ffe95f23a56b822af90e2` 领先 156、落后 0。
+  已以 `--ff-only` 合回本地 `release/2.1.10`；用户随后授权同步至 GitHub，本条状态提交与
+  同步结果一并推送至 `origin/release/2.1.10`，不修改 `origin/main`，不创建 Release 或交付 APK。
+  真机回归尚未执行，直播屏蔽慢请求等时序风险见下方同步记录。
+
 - 当前分支：`release/2.1.10`
-- 本次同步起点：`release/2.1.10@f99d227bf5869fbc87548a548273c07c42ccbe95`
-  (`docs: record GitHub upstream sync`)。
+- 本次同步起点：`release/2.1.10@8f8e469bf8139af01126ac37f80cb26e7110d6e0`。
+  同步前状态文档已保存为 `568bf2f`；merge-base 为 `9cc3bb2`，同步前领先 152、落后 8。
 - 最新 GitHub 发布源提交：`859d39c4ff3c77c37e1cc1d7131192df8f8b4241`
   (`chore: prepare 2.1.2 release`)
 - 最新功能快照：`0c647b51ae60defc39c6171e5ca9387e43e596d2`
   (`feat: retry decoder failures with software video fallback`)
-- 最新上游合并提交：`a86e54649d403f11b089ca293ab82052bad776cc`
-  (`sync: merge upstream main at 9cc3bb2`)。
+- 最新上游合并提交：`abd8ede5c4c541109199377c14414f21ad2035ed`
+  (`sync: merge upstream main at 4d66b7b`)。
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
-- 当前已获取并合入的 `upstream/main`：`9cc3bb2c80d2e6dc0fb2a647ea5658e7d95ff762`
-  (`fix cupertino patch`)。
+- 当前已获取并合入的 `upstream/main`：`4d66b7b638c9cb9d533ffe95f23a56b822af90e2`
+  (`fix find missing video qa`)。
 - 最新 R1 实现提交：`a4fd7e7715d38ca2b9c6da5ce727230229236474`
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- 本条 GitHub 状态提交计入后，`release/2.1.10` 相对 `upstream/main@9cc3bb2` 领先 152、
-  落后 0；同步结果已推送至 `origin/release/2.1.10`，不修改 `origin/main`。
+- 2026-09-05 GitHub 同步目标：`https://github.com/loneshu7/PiliPlusPlus.git` 的
+  `release/2.1.10` 分支。推送前已 `git fetch origin`，本地领先远程 11、落后 0，
+  加上本条文档提交共推送 12 个提交；使用普通 push，不强推、不修改其他远程分支。
+  本批只更新同步状态文档，不改源码；沿用上一批本地验证，未新增真机或 GitHub CI 通过结论。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -36,6 +45,49 @@
   当前工作区以实际 `git status` 为准。
 
 ## 最新上游同步
+
+- 2026-09-05 在 `sync/upstream-20260905-4d66b7b` 合入上游 `4d66b7b`，同步前文档提交
+  `568bf2f`，普通 merge 提交 `abd8ede5c4c541109199377c14414f21ad2035ed`。未执行 rebase
+  或强推；自动化验证后以 `--ff-only` 合回本地发布分支，随后按用户授权推送至
+  `origin/release/2.1.10`，不修改 `origin/main`。
+- 接受 8 个提交：`837ef86` 下载分P排序、`4cc337b` 直播关键词/用户屏蔽、`3e6ac82` 消息
+  未读角标、`75c83af` Linux WebView/笔记/Cookie、`edf0bf2` 屏蔽传参与网页统一路由、
+  `3c07a28` 权限依赖升级、`edf8c55` 上游版本声明、`4d66b7b` 缺失视频画质容错。
+  Linux 实现随上游保留，不扩大本项目 Android 支持范围。
+- 上游涉及 20 个文件，与本地差异重叠 4 个：直播控制器、视频控制器、`page_utils.dart`
+  和 `pubspec.yaml`。唯一文本冲突为版本行，保留本地 `2.1.10+2026082502`；最终相对同步前
+  有效源码/依赖改动为 19 个文件。本地 Android 身份、Media3 Kotlin、下拉组件和小窗服务未修改。
+- 自动合并已审查：直播后端中立尺寸监听和 `playWhenReady` 继承保留；视频画质补充增加 DASH
+  判断，`initializePlayer: false` 各恢复分支仍不初始化播放器；网页转视频/PGC/课程/直播
+  仍经过释放旧小窗的入口，小窗恢复仍直接进入 `/videoV`，不会误触该释放路径。
+  权限依赖为 Android `14.1.0`、公共接口 `4.4.1`；`flutter pub get` 未产生额外修改。
+- 验证使用 Flutter 3.47.2 / Dart 3.13.2；现有 `material_ui 1.1.1` 的 9 个 Android 补丁
+  反向检查均通过。格式检查通过（1332 文件、0 修改）；`dart analyze` 为 0 error/warning、
+  34 条 info；Flutter 测试 75/75、Android `:app:testDebugUnitTest` 30/30、Android Release
+  构建和 `git diff --check` 通过。LSP 未能启动默认 Dart server，本次静态诊断以完整
+  `dart analyze` 为准；若需 LSP，应安装对应服务或在 `pi-lsp.json` 配置有效 Dart 命令。
+  Gradle 继续使用 `-Pkotlin.incremental=false -Pkotlin.compiler.execution.strategy=in-process`，
+  保留既有 compileSdk/Kotlin 弃用与插件迁移警告。日志在 `build/sync-4d66b7b-logs/`。
+- 同步验证 APK（非正式交付）：
+  `D:\PiliPlus\build\app\outputs\flutter-apk\pili++-2.1.10-2026082502-universal-release-upstream-4d66b7b-validation.apk`。
+  构建起始时间 `2026-09-05 20:00:17 +08:00`，大小 68,738,851 字节；三个 ABI 的 `libapp.so`
+  均核对含准确合并提交 `abd8ede5c4c541109199377c14414f21ad2035ed`。APK SHA-256：
+  `BA9D9AE684A2C36E749015887AA3496E3FF6A4D283D6840E79BC109EDEDACD43`。
+  `tool/verify_release.ps1 -AllowAlreadyDelivered` 已通过 applicationId `com.shudo.plusplus`、
+  应用名 `pili++`、版本、universal 三 ABI 与既有证书校验；证书 SHA-256 为
+  `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C`。
+  当前 PowerShell 缺少 `Get-FileHash`，仅在校验进程内提供等价 .NET SHA-256 函数。
+  不交付此包、不修改 `tool/release_baseline.json`。
+- 待真机验证/已识别风险：上游直播屏蔽请求被纳入 `Future.wait`，慢接口可能导致原生已播放但
+  `isLoaded` 尚未置位，画面和控件延迟；首批弹幕也可能先于规则加载，首次窗口内媒体键暂停
+  后刷新可能受到自动播放判断影响。本次保留上游普通功能实现，未建立额外本地修复分叉；
+  必须验证屏蔽接口慢/失败、早期弹幕、暂停刷新和快速退出，有可复现问题时优先向上游反馈。
+- 还需真机回归：下载排序、未读角标、Android 权限、DASH 缺档与 durl 切换、小窗同会话/Texture
+  恢复、普通网页与短链/UGC/PGC/课程/直播跳转、A→B→C 返回链、mpv/Media3 点播/直播、下拉
+  全屏/上滑退出、前后台和 PiP。独立音频路由未见小窗释放入口，统一网页路由扩大了该既有
+  边界的触达，需专项核验。现有单测未直接覆盖上述控制器/路由集成时序，不将自动化通过
+  记为真机兼容完成；Media3 完整替代仍受既有兼容矩阵与 Android mpv 移除门槛约束。
+- 本批未增加本地源码 hook 或新的上游冲突面；仅重挂并保留既有差异、接受上游普通实现。
 
 - 2026-09-04 在 `sync/upstream-20260904-9cc3bb2` 从
   `release/2.1.10@f99d227bf5869fbc87548a548273c07c42ccbe95` 分两阶段合入
