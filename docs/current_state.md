@@ -10,8 +10,9 @@
 
 - 2026-09-05 已在临时分支 `sync/upstream-20260905-4d66b7b` 完成 8 个上游提交的合并与自动化
   验证，合并提交为 `abd8ede5c4c541109199377c14414f21ad2035ed`。本条完成状态提交计入后，
-  相对 `upstream/main@4d66b7b638c9cb9d533ffe95f23a56b822af90e2` 领先 155、落后 0。
-  验证通过后以 `--ff-only` 合回本地 `release/2.1.10`；本次不推送、不发布 APK。
+  相对 `upstream/main@4d66b7b638c9cb9d533ffe95f23a56b822af90e2` 领先 156、落后 0。
+  已以 `--ff-only` 合回本地 `release/2.1.10`；用户随后授权同步至 GitHub，本条状态提交与
+  同步结果一并推送至 `origin/release/2.1.10`，不修改 `origin/main`，不创建 Release 或交付 APK。
   真机回归尚未执行，直播屏蔽慢请求等时序风险见下方同步记录。
 
 - 当前分支：`release/2.1.10`
@@ -30,8 +31,10 @@
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
   (`fix: use package version for update checks`)。
-- 上次已推送的 `origin/release/2.1.10@8f8e469` 相对 `upstream/main@9cc3bb2` 领先 152、
-  落后 0；本次同步仅更新本地 `release/2.1.10`，不修改远程发布分支或 `origin/main`。
+- 2026-09-05 GitHub 同步目标：`https://github.com/loneshu7/PiliPlusPlus.git` 的
+  `release/2.1.10` 分支。推送前已 `git fetch origin`，本地领先远程 11、落后 0，
+  加上本条文档提交共推送 12 个提交；使用普通 push，不强推、不修改其他远程分支。
+  本批只更新同步状态文档，不改源码；沿用上一批本地验证，未新增真机或 GitHub CI 通过结论。
 - 应用内小窗、音频焦点/媒体控制、系统 PiP 恢复、版本更新和兼容记录已保存到上述
   功能快照。交接时应以实际 `git status` 为准；存在未提交修改时不得直接 merge 或
   rebase。
@@ -45,7 +48,8 @@
 
 - 2026-09-05 在 `sync/upstream-20260905-4d66b7b` 合入上游 `4d66b7b`，同步前文档提交
   `568bf2f`，普通 merge 提交 `abd8ede5c4c541109199377c14414f21ad2035ed`。未执行 rebase
-  或强推；自动化验证后以 `--ff-only` 合回本地发布分支，不主动推送。
+  或强推；自动化验证后以 `--ff-only` 合回本地发布分支，随后按用户授权推送至
+  `origin/release/2.1.10`，不修改 `origin/main`。
 - 接受 8 个提交：`837ef86` 下载分P排序、`4cc337b` 直播关键词/用户屏蔽、`3e6ac82` 消息
   未读角标、`75c83af` Linux WebView/笔记/Cookie、`edf0bf2` 屏蔽传参与网页统一路由、
   `3c07a28` 权限依赖升级、`edf8c55` 上游版本声明、`4d66b7b` 缺失视频画质容错。
