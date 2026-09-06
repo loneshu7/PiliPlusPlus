@@ -1,12 +1,20 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-09-05 +08:00
+> 最后核对：2026-09-06 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
 
 ## 仓库基线
+
+- 2026-09-06 按用户要求将发布标识对齐上游 `2.1.3.1`；依照 Flutter/pubspec 与上游标签约定，
+  `pubspec.yaml` 写为 `version: 2.1.3+1`（versionName `2.1.3`、versionCode `1`）。版本提交
+  `e4b3fef` (`release: align version with 2.1.3.1`) 已普通推送至
+  `origin/release/2.1.10`，未修改 `origin/main`、未创建 GitHub Release、未构建或交付 APK。
+  `flutter pub get --offline`、版本格式/取值检查和 `git diff --check` 通过；未执行源码测试、
+  Android 构建或真机验证。本次 versionCode 低于已交付基线 `2026082501`，因此当前源码不能
+  直接作为 `pili++` 升级包；正式交付前必须按发布规则改为高于既有交付包的 versionCode。
 
 - 2026-09-05 已在临时分支 `sync/upstream-20260905-4d66b7b` 完成 8 个上游提交的合并与自动化
   验证，合并提交为 `abd8ede5c4c541109199377c14414f21ad2035ed`。本条完成状态提交计入后，
