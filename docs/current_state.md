@@ -1,12 +1,40 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-09-06 +08:00
+> 最后核对：2026-09-07 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
 
 ## 仓库基线
+
+- 2026-09-07 用户授权拉取后，在 `sync/upstream-20260907-5aa7b02` 保存起点为 `387bd9d`，
+  普通合并 `upstream/main@5aa7b02`，合并提交 `f1104dbb8f271c1ea2daf21a86de0bd9d7ae4587`。
+  无文本冲突，有效变更 6 个文件；WebP 修复自动映射到本地 mpv adapter，三类本地实现与身份未改。
+  用户随后明确选择“接受风险并合回”：保留下述上游原实现与已知风险，不添加本地修复，
+  授权合回本地 `release/2.1.10`，不推送。同步前 merge-base 为 `4d66b7b`，领先 158、落后 2。
+  - 依赖实际审查覆盖旧 `08b7b94` 到新 `73771ec` 的 13 个文件：NativePlayer.create 签名不变；
+    原生循环改为 wakeup 通知后 Dart 非阻塞取事件，所有 handle 串行等待回调；Android mpv
+    二进制由 `20260824` 升至 `20260906`，三 ABI 校验改为 SHA-256。
+  - 代码审查发现上游风险：加载更多期间切换页码顺序可能因 isLoading 拒绝刷新而停留 Loading；
+    倒序在收藏总数变为零或跨页增删后可能请求 pn=0 或错误显示为空；依赖库原生事件循环加载失败
+    后降级 isolate 的 dispose 路径未向 isolate 发退出通知，有释放后访问风险。最后一项仅针对
+    降级路径，不能断言正常 Android 必然触发。用户已接受本次同步风险；问题未修复，后续优先跟进上游。
+  - Flutter 3.47.2 / Dart 3.13.2：格式检查 1333 文件、0 改动；dart analyze 0 error/warning、
+    34 条 info；Flutter 测试 75/75；Android JVM 30/30；Release 构建及 git diff --check 通过。
+    首次 pub get 报 package_graph 的 screen_brightness_ios 缺失，重跑成功、锁文件无额外改动。
+    首次 JVM 命令的 PowerShell 参数拆分失败，给两个 -P 参数加引号后重跑通过，非源码失败。
+    LSP 默认 Dart server 不可用，静态检查以 dart analyze 为准；需安装服务或配置 pi-lsp.json。
+    日志位于 `build/sync-5aa7b02-logs/`，仍有既有 SDK/Kotlin/Gradle 弃用警告。
+  - 构建验证 APK：`D:\PiliPlus\build\app\outputs\flutter-apk\app-release.apk`，
+    构建结束 2026-09-07 17:16:39 +08:00，68,250,198 字节；源码为准确合并提交 f1104db，工作区干净时构建。
+    aapt/apksigner 检查：com.shudo.plusplus、pili++、2.1.3+1、arm64-v8a/armeabi-v7a/x86_64，
+    证书 SHA-256 与既有 775803BD…C44C5C 基线一致；APK SHA-256：
+    `F48802FB7DA1195DFFBBE183492509369B06E65ACBDF70AF841FF0EB316BEADA`。
+    非交付产物，versionCode 1 低于交付基线，不可作为升级包；未执行正式交付脚本、不更新发布基线。
+  - 未执行真机验收：收藏加载中切换/跨页增删、mpv 创建销毁/WebP 成功取消/多会话与 Live Photo、
+    Media3 点播直播、下拉全屏、小窗同会话恢复及 PiP 均待回归。自动化不代表完成兼容。
+    本批未新增本地源码 hook 或上游冲突面。
 
 - 2026-09-07 已执行 `git fetch upstream`；当前 `release/2.1.10@4578287` 相对
   `upstream/main@5aa7b02` 领先 158、落后 2。尚未开始同步；上游新增提交为 `d7fb17b`
@@ -35,17 +63,17 @@
   真机回归尚未执行，直播屏蔽慢请求等时序风险见下方同步记录。
 
 - 当前分支：`release/2.1.10`
-- 本次同步起点：`release/2.1.10@8f8e469bf8139af01126ac37f80cb26e7110d6e0`。
-  同步前状态文档已保存为 `568bf2f`；merge-base 为 `9cc3bb2`，同步前领先 152、落后 8。
+- 本次同步起点：`release/2.1.10@4578287945c2d0d4d1315e2dd6ec200f5b6589fe`。
+  同步前状态与计划已保存为 `387bd9d`；merge-base 为 `4d66b7b`，同步前领先 158、落后 2。
 - 最新 GitHub 发布源提交：`859d39c4ff3c77c37e1cc1d7131192df8f8b4241`
   (`chore: prepare 2.1.2 release`)
 - 最新功能快照：`0c647b51ae60defc39c6171e5ca9387e43e596d2`
   (`feat: retry decoder failures with software video fallback`)
-- 最新上游合并提交：`abd8ede5c4c541109199377c14414f21ad2035ed`
-  (`sync: merge upstream main at 4d66b7b`)。
+- 最新上游合并提交：`f1104dbb8f271c1ea2daf21a86de0bd9d7ae4587`
+  (`sync: merge upstream main at 5aa7b02`)。
 - 上游：`https://github.com/bggRGjQaUbCoE/PiliPlus.git`
-- 当前已获取并合入的 `upstream/main`：`4d66b7b638c9cb9d533ffe95f23a56b822af90e2`
-  (`fix find missing video qa`)。
+- 当前已获取并合入的 `upstream/main`：`5aa7b02e3dc8d298079a126887ee3dce02bf35a1`
+  (`feat: page order`)。
 - 最新 R1 实现提交：`a4fd7e7715d38ca2b9c6da5ce727230229236474`
   (`refactor: isolate mpv subtitle and rendering types`)。
 - 最新版本检查修复提交：`05f156218fc1ba086f1f63f27be2a2fb412c154a`
