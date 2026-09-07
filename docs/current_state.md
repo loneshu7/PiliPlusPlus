@@ -8,6 +8,17 @@
 
 ## 仓库基线
 
+- 2026-09-07 已执行 `git fetch upstream`；当前 `release/2.1.10@4578287` 相对
+  `upstream/main@5aa7b02` 领先 158、落后 2。尚未开始同步；上游新增提交为 `d7fb17b`
+  (`opt: mpv args & native event loop (#2873)`) 和 `5aa7b02` (`feat: page order`)。
+  已阅读两提交仓库 diff：前者将 media-kit 系列依赖切换至 My-Responsitories 的 `native` 分支
+  （锁定 `73771ec`），并调整 mpv WebP 转码的 idle、事件订阅和结束处理；依赖库内部改动尚未审查。
+  后者为收藏夹详情新增页码正序/倒序加载，不反转单页内条目。此次仅说明改动，未合并、构建或测试。
+  随后用 `git merge-tree --write-tree HEAD upstream/main` 预演（不改变工作区、索引和分支），
+  返回成功且无文本冲突；预演改动 6 个文件，自动将 WebP 修复应用到本地已迁移的
+  `lib/plugin/pl_player/backends/mpv/mpv_convert_webp.dart`。此结论不代表依赖兼容或运行验证通过。
+  当前仅本状态文档未提交，正式同步前需先保存到明确分支；未执行实际 merge/rebase。
+
 - 2026-09-06 按用户要求将发布标识对齐上游 `2.1.3.1`；依照 Flutter/pubspec 与上游标签约定，
   `pubspec.yaml` 写为 `version: 2.1.3+1`（versionName `2.1.3`、versionCode `1`）。版本提交
   `e4b3fef` (`release: align version with 2.1.3.1`) 已普通推送至
