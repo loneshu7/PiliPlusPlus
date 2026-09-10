@@ -14,9 +14,9 @@
 
 ## Task 1: 保存起点并合入
 **Files:** docs/current_state.md、本计划；上游的收藏夹三个文件、迁移后的 mpv_convert_webp.dart、pubspec.yaml、pubspec.lock。
-- [ ] 核对 fetch、HEAD、merge-base、双方提交和重叠文件。
-- [ ] 创建 sync/upstream-20260907-5aa7b02，提交状态文档和计划。
-- [ ] 执行 git merge --no-ff upstream/main，审查六个有效改动文件和重命名映射。
+- [x] 核对 fetch、HEAD、merge-base、双方提交和重叠文件。
+- [x] 创建 sync/upstream-20260907-5aa7b02，提交状态文档和计划。
+- [x] 执行 git merge --no-ff upstream/main，审查六个有效改动文件和重命名映射。
 
 ## Task 2: 审查依赖并验证
 **Files:** 不主动新增本地业务差异；日志保存 build/sync-5aa7b02-logs/。
