@@ -38,7 +38,7 @@
 **Interfaces:** 输入上述 Git 基线和原工作区未提交内容；输出干净的 `sync/upstream-20260910-cd096d3` 分支及 Flutter 3.47.3 工具链。
 
 - [x] 按 using-git-worktrees 技能确认独立工作区位置与忽略规则，在同步分支保存必要文档快照；原工作区未知 `nul` 保留原样。合并只在已确认干净的同步工作区进行。
-- [ ] 在同步工作区记录以下命令结果，要求 HEAD 与已记录起点或仅文档快照提交一致：
+- [x] 在同步工作区记录以下命令结果，要求 HEAD 与已记录起点或仅文档快照提交一致：
 
 ```powershell
 git status --short --branch
@@ -47,9 +47,9 @@ git log --reverse --oneline HEAD..cd096d3377f3a80d17c910d732b0762f6d8588d5
 git diff --stat HEAD...cd096d3377f3a80d17c910d732b0762f6d8588d5
 ```
 
-- [ ] 准备专用于本次验证的 Flutter 3.47.3 与 pub 缓存，保留既有 3.47.2 环境以供对照。记录 `flutter --version` 和 `dart --version` 的实际输出。
-- [ ] 阅读目标提交的 `lib/scripts/patch.ps1`，复用其 Android 补丁清单。该脚本当前包含全局 Git 用户设置和按目录枚举删除 material_ui 缓存，不能直接在共享本地环境原样运行；在隔离目录按清单逐项 `git apply --check`、应用和反向检查，定位包目录使用 `.dart_tool/package_config.json` 的准确 rootUri。
-- [ ] 文档快照提交后核对同步工作区干净，记录原始未提交内容仍在原工作区安全保留。
+- [x] 准备专用于本次验证的 Flutter 3.47.3 与 pub 缓存，保留既有 3.47.2 环境以供对照。记录 `flutter --version` 和 `dart --version` 的实际输出。
+- [x] 阅读目标提交的 `lib/scripts/patch.ps1`，复用其 Android 补丁清单。该脚本当前包含全局 Git 用户设置和按目录枚举删除 material_ui 缓存，不能直接在共享本地环境原样运行；在隔离目录按清单逐项 `git apply --check`、应用和反向检查，定位包目录使用 `.dart_tool/package_config.json` 的准确 rootUri。
+- [x] 文档快照提交后核对同步工作区干净，记录原始未提交内容仍在原工作区安全保留。
 
 ### Task 2: 完成普通合并与必要 Media3 适配
 
@@ -57,21 +57,21 @@ git diff --stat HEAD...cd096d3377f3a80d17c910d732b0762f6d8588d5
 
 **Interfaces:** `captureFrame(): Future<PlayerFeatureResult<ui.Image>>`、`position`、`seekPosition`、`progress`、`onSeekStart(int)`、`onSeekEnd()`；保留 `_positionListeners`、媒体通知和心跳事件。
 
-- [ ] 在同步工作区开始普通合并并列出实际冲突；不使用会统一选择一侧的策略参数：
+- [x] 在同步工作区开始普通合并并列出实际冲突；不使用会统一选择一侧的策略参数：
 
 ```powershell
 git merge --no-ff --no-commit cd096d3377f3a80d17c910d732b0762f6d8588d5
 git diff --name-only --diff-filter=U
 ```
 
-- [ ] 视频头部的 6 处冲突采用上游 `Padding + Column` 布局、边距和 Debug 空降入口。保留现有公共轨道、字幕、播放器信息、截图及小窗相关调用。`AppBar` 包装可追溯到仓库旧基线，不将其本身视为必须保留的 Media3 能力。合并 import 后同时包含：
+- [x] 视频头部的 6 处冲突采用上游 `Padding + Column` 布局、边距和 Debug 空降入口。保留现有公共轨道、字幕、播放器信息、截图及小窗相关调用。`AppBar` 包装可追溯到仓库旧基线，不将其本身视为必须保留的 Media3 能力。合并 import 后同时包含：
 
 ```dart
 import 'package:flutter/foundation.dart' show compute, kDebugMode;
 import 'package:material_ui/material_ui.dart' hide showBottomSheet;
 ```
 
-- [ ] 截图继续调用本地 `captureFrame()`，保留 `PlayerFeatureSuccess` / `PlayerFeatureUnavailable` / `PlayerFeatureFailure`、错误上报及 `whenComplete(value.dispose)`。采用上游延后计算文件名时间的改动：删除截图请求前的 `time` 声明，在 PNG 编码成功后的 `if (bytes != null)` 内、保存前放入以下代码：
+- [x] 截图继续调用本地 `captureFrame()`，保留 `PlayerFeatureSuccess` / `PlayerFeatureUnavailable` / `PlayerFeatureFailure`、错误上报及 `whenComplete(value.dispose)`。采用上游延后计算文件名时间的改动：删除截图请求前的 `time` 声明，在 PNG 编码成功后的 `if (bytes != null)` 内、保存前放入以下代码：
 
 ```dart
 final time = DurationUtils.formatDuration(
@@ -79,9 +79,9 @@ final time = DurationUtils.formatDuration(
 ).replaceAll(':', '-');
 ```
 
-- [ ] 翻译菜单采用上游 `onSelected: videoDetailController.setLanguage` 与各项 `value`，移除旧菜单项中的重复 `onTap`，避免重复处理。保留现有字幕入口和 `PlPlayerSurface`，不重新引入直接读取后端对象的代码。
-- [ ] 底部常驻进度条和控制栏进度条统一读取 `plPlayerController.progress` / `controller.progress`；拖动更新 `seekPosition`，后端事件更新 `position`。对照 `d7c6263` 保留结束时立即更新目标位置的顺序，同时保持既有下拉、上滑、锁定及手势互斥逻辑。
-- [ ] 修正预演中已确认的语义遗漏：Media3 事件回调仍有 `if (!isSeeking.value)`，而 mpv 回调已按上游移除。在 Media3 回调中使用以下完整条件块，保持下方 `_positionListeners.notify(event.position)`：
+- [x] 翻译菜单采用上游 `onSelected: videoDetailController.setLanguage` 与各项 `value`，移除旧菜单项中的重复 `onTap`，避免重复处理。保留现有字幕入口和 `PlPlayerSurface`，不重新引入直接读取后端对象的代码。
+- [x] 底部常驻进度条和控制栏进度条统一读取 `plPlayerController.progress` / `controller.progress`；拖动更新 `seekPosition`，后端事件更新 `position`。对照 `d7c6263` 保留结束时立即更新目标位置的顺序，同时保持既有下拉、上滑、锁定及手势互斥逻辑。
+- [x] 修正预演中已确认的语义遗漏：Media3 事件回调仍有 `if (!isSeeking.value)`，而 mpv 回调已按上游移除。在 Media3 回调中使用以下完整条件块，保持下方 `_positionListeners.notify(event.position)`：
 
 ```dart
 final posInSeconds = event.position.inSeconds;
@@ -92,10 +92,10 @@ if (posInSeconds != position.value) {
 }
 ```
 
-- [ ] 审查自动合并的直播刷新：Media3 已使用 `isLive ? Duration.zero : currentPosition` 且继承 `playWhenReady`，保持该行为；mpv 接受上游直播不携带旧位置的修复。检查新视频和小窗恢复仍分别执行正确的会话释放或接回流程。
-- [ ] 接受动态、评论、空降编辑、Android 外部应用打开、Linux 单实例等普通上游改动；AndroidHelper 与生成 JNI 绑定配对核对，应用身份不改。
-- [ ] 获取目标依赖并完成 Task 1 的补丁适配。确认 Flutter 3.47.3、material_ui 1.2.0、logger 2.8.0、platform 3.2.0 与锁文件一致，media-kit 未发生额外升级。
-- [ ] 确认无未合并文件、无冲突标记，检查有效源码差异后提交合并结果：
+- [x] 审查自动合并的直播刷新：Media3 已使用 `isLive ? Duration.zero : currentPosition` 且继承 `playWhenReady`，保持该行为；mpv 接受上游直播不携带旧位置的修复。检查新视频和小窗恢复仍分别执行正确的会话释放或接回流程。
+- [x] 接受动态、评论、空降编辑、Android 外部应用打开、Linux 单实例等普通上游改动；AndroidHelper 与生成 JNI 绑定配对核对，应用身份不改。
+- [x] 获取目标依赖并完成 Task 1 的补丁适配。确认 Flutter 3.47.3、material_ui 1.2.0、logger 2.8.0、platform 3.2.0 与锁文件一致，media-kit 未发生额外升级。
+- [x] 确认无未合并文件、无冲突标记，检查有效源码差异后提交合并结果：
 
 ```powershell
 git diff --name-only --diff-filter=U
