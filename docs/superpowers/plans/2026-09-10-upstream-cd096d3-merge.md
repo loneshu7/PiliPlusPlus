@@ -112,7 +112,7 @@ git diff --stat a5a93d7a23da38c8a0c81eeac520d6e1e7d848a4
 
 **Interfaces:** 输入准确合并提交；输出可审查的测试记录、同一源码状态的 Android 验证 APK 和真机回归结果。
 
-- [ ] 使用 Task 1 的准确工具链运行下列检查，任一失败先定位并修复，不把失败记为已通过：
+- [x] 使用 Task 1 的准确工具链运行下列检查，任一失败先定位并修复，不把失败记为已通过：
 
 ```powershell
 dart format --output=none --set-exit-if-changed lib test
@@ -120,13 +120,13 @@ dart analyze
 flutter test
 ```
 
-- [ ] 在 `android` 目录执行 JVM 门禁，两个 `-P` 参数保持独立并加引号：
+- [x] 在 `android` 目录执行 JVM 门禁，两个 `-P` 参数保持独立并加引号：
 
 ```powershell
 .\gradlew.bat :app:testDebugUnitTest '-Pkotlin.incremental=false' '-Pkotlin.compiler.execution.strategy=in-process'
 ```
 
-- [ ] 执行 Android Release 构建，并按 AGENTS.md 的依赖升级要求覆盖 armeabi-v7a、arm64-v8a、x86_64；构建所需非增量 Kotlin 参数沿用已有验证配置。核对应用名、applicationId、版本、ABI、签名及 SHA-256；仅保存验证产物，文件名增加上游 SHA 与 validation 标识，不覆盖正式交付包。
+- [x] 执行 Android Release 构建，并按 AGENTS.md 的依赖升级要求覆盖 armeabi-v7a、arm64-v8a、x86_64；构建所需非增量 Kotlin 参数沿用已有验证配置。核对应用名、applicationId、版本、ABI、签名及 SHA-256；仅保存验证产物，文件名增加上游 SHA 与 validation 标识，不覆盖正式交付包。
 
 ```powershell
 flutter build apk --release --split-per-abi --no-pub
@@ -135,7 +135,7 @@ flutter build apk --release --split-per-abi --no-pub
 - [ ] 在真实 Android 设备验证拖动：实际播放 10 秒时将预览拖到 80 秒，后端报告 11 秒时实际位置为 11、预览仍为 80；结束拖动后显示和跳转至目标位置。分别检查手势、底部进度条、暂停时拖动、短拖取消、连续 seek 与媒体通知，确认两个后端的公共状态一致。
 - [ ] 真机检查截图保存/取消/失败提示与评论区截图，窗口态及全屏控件可见可操作；检查翻译与字幕、直播刷新、动态三标签/分页、评论分页、空降时间编辑及“其它 app 打开”。
 - [ ] 回归三类差异的关键场景：顶部下拉与短滑回弹、全屏上滑退出、锁定及横向 seek；应用内小窗同会话/Texture 恢复、打开下一视频释放旧会话、分 P / PGC / 本地媒体恢复、前后台与系统 PiP。
-- [ ] 整理准确合并提交、源码改动、自动化与真机结果。未完成真机场景明确记录为待验证，不能据此宣称兼容完成；集成前重点审查新增直接 mpv 依赖和普通上游页面是否被本地旧结构覆盖。
+- [x] 整理准确合并提交、源码改动、自动化与真机结果。未完成真机场景明确记录为待验证，不能据此宣称兼容完成；集成前重点审查新增直接 mpv 依赖和普通上游页面是否被本地旧结构覆盖。
 - [ ] 验证达到约定门禁后集成本地 `release/2.1.10`；集成前重新核对原工作区文档修改，妥善保存后再合回，不覆盖原有未提交内容。推送、正式发布和版本升级另按用户实际请求执行。
 
 ## 自检结论

@@ -6,29 +6,67 @@
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
 
-## 上游同步执行中（2026-09-10）
+## 上游同步：自动化通过，待最终审查与本地集成（2026-09-10）
 
-- 用户已授权开始执行 cd096d3 合并方案，要求保留本地修改。已从
-  `release/2.1.10@a5a93d7a23da38c8a0c81eeac520d6e1e7d848a4` 创建独立工作区
-  `D:/PiliPlus/.worktrees/upstream-cd096d3`，分支 `sync/upstream-20260910-cd096d3`。
-  原工作区应用源码、索引和分支尚未改变；现有三份文档和未跟踪 `nul` 保留原位。
-- 原始内容及 SHA-256 清单已保存到
-  `D:/PiliPlus/build/sync-cd096d3-logs/original-workspace-20260910-140533`，包含原始文档、
-  `nul.original` 和 `tracked-before.patch`。同步工作区已复制三份文档，先保存为明确提交再合并。
-- 同步目标固定为 `cd096d3377f3a80d17c910d732b0762f6d8588d5`；三类本地差异及应用身份
-  沿用原约定。文档快照已提交为 `d918b9b`；Flutter 3.47.2 基线测试 75/75 通过。已开始
-  `--no-ff --no-commit` 普通合并，实际为 3 个文件 / 9 处文本冲突，已逐项解决；保留公共
-  截图及图像释放、Texture、手势和菜单能力，接入上游进度预览及 Media3 实际进度更新。
-- 独立 Flutter 3.47.3 / Dart 3.13.3 已就绪，SDK 位于
-  `D:/CodexToolchains/PiliPlus/flutter-sdk/flutter-3.47.3`，官方 tag 对应 `e8113bf456`；
-  24 个目标 Android SDK 补丁与 Android precache 通过。Pub 缓存独立于旧环境；旧 SDK
-  源码补丁哈希保持一致。`pub get --enforce-lockfile` 通过，锁文件无额外变化；material_ui
-  1.2.0 的 9 个 Android 补丁通过正向检查、应用和反向检查。254 个应用依赖根目录均在
-  隔离环境内。合并后格式检查通过（1338 文件、0 改动）；分析、测试与构建尚待执行。
-- 已再次校验原工作区三份文档和 `nul`，与快照逐字节一致；自动合并后的 17 个受保护源码
-  路径保持不变，包括 Media3 原生桥接、Texture、下拉状态机、小窗和应用身份文件。
-- 本机 adb 暂未发现设备；用户已回复“稍后连接真机”。自动化后继续进行可用的真机回归，
-  未完成的场景保持待验证。当前尚未构建或交付本批 APK；审查与门禁通过后再集成本地分支。
+本节为当前同步状态；下方查询、建议和历次记录保留各批当时的事实。
+
+- 本批属于上游同步。用户已授权执行并要求保留本地修改；从
+  `release/2.1.10@a5a93d7a23da38c8a0c81eeac520d6e1e7d848a4` 创建隔离分支
+  `sync/upstream-20260910-cd096d3`，工作区 `D:/PiliPlus/.worktrees/upstream-cd096d3`。
+  已普通合入 14 个上游提交，目标 `cd096d3377f3a80d17c910d732b0762f6d8588d5`；合并提交
+  `b5deacd0b335ba7326e6ad6b1e3cecf60cf85308`，两父提交为文档快照 `d918b9b` 和上游目标。
+  已合入的上游基线 / merge-base 为 `cd096d3`，相对该目标落后 0。后续提交仅记录验证结果。
+- 原工作区当前仍在 `a5a93d7`，尚未集成或暂存原始文档。其三份文档与未跟踪 `nul` 已多次
+  校验为逐字节不变，原始内容和 SHA-256 清单保存于
+  `D:/PiliPlus/build/sync-cd096d3-logs/original-workspace-20260910-140533`。
+  同步分支的 `d918b9b` 已保存这些文档内容，后续只在该副本补充本批记录。
+- 实际 3 文件 / 9 块文本冲突已逐项解决。`header_control.dart` 接纳上游 Padding/Column，
+  保留公共菜单；公共播放器 `controller.dart` 保留 `captureFrame`、错误分支和图像释放，
+  整合截图保存时机，并让 Media3 在拖动预览时继续回传真实进度、通知、心跳和位置监听；
+  `view.dart` 接入唯一翻译选择回调及 `progress`，保留空降/章节/弹幕趋势和原有手势挂接。
+  Media3 原生桥接、Texture、下拉状态机、小窗服务、视频页接回和应用身份等 17 个受保护
+  源码路径与本地起点完全相同。本批没有新增页面级后端依赖或额外本地功能冲突面。
+- SDK 为独立 Flutter 3.47.3 / Dart 3.13.3，官方 tag `e8113bf456`，目录
+  `D:/CodexToolchains/PiliPlus/flutter-sdk/flutter-3.47.3`；24 个 Android SDK 补丁及
+  Android precache 通过。独立 Pub 缓存位于
+  `D:/CodexToolchains/PiliPlus/pub-cache-upstream-cd096d3-flutter-3.47.3`；旧 SDK 源码
+  补丁哈希不变，共享 Pub 缓存未修改。`pub get --enforce-lockfile` 通过、锁文件无额外变化；
+  material_ui 1.2.0 的 9 个 Android 补丁全部通过正向检查、应用和反向检查，254 个应用
+  依赖根目录均位于隔离环境。logger 2.8.0、platform 3.2.0 采用上游，media-kit 保持 `73771ec`。
+- 所有自动化均针对准确合并源码 `b5deacd`，构建前后工作区干净：
+  - 格式检查：1338 文件，0 改动；`dart analyze` 退出 0，0 error/warning、34 条既有 info。
+  - 完整 Flutter 测试：75/75；Android `:app:testDebugUnitTest`：30/30，0 失败或跳过。
+  - Android Release 分 ABI 构建：armeabi-v7a、arm64-v8a、x86_64 全部成功；结束时间
+    2026-09-10 15:33:43 +08:00。`git diff --check` 通过。
+  - 暂存 diff 的额外检查报告上游 `tabs.patch` 的 11 行单空格上下文；逐行核实为合法
+    unified-diff 空白上下文且文件与目标上游一致，保留补丁语法。源码默认空白检查及仅对
+    patch 路径关闭 blank-at-eol 的补丁检查均通过，不修改共享 Git 属性或源码。
+  - Gradle 沿用独立缓存、进程内 Kotlin / 关闭增量和短 Unix-domain 临时路径；仍有依赖
+    compileSdk、Kotlin/Gradle 与 SDK XML 弃用提示，未出现测试或构建失败。
+- 独立任务审查通过，无 Critical / Important 阻断项。记录一项 P3 上游退化：横向 seek
+  结束先清空 `seekToPos`，再调用只在非空时触发震动的 `onSeekEnd()`，因此结束轻触震动
+  缺失；实际 seek 与进度正常。按普通功能跟随上游的范围约定保留并跟进，未扩大本地实现。
+  最终分支审查和原工作区集成尚待完成；未推送、未发布、未更新发布基线。
+- adb 最新检查仍无设备；用户回复“稍后连接真机”。下列全部保持“待真机验证”：实际/预览
+  进度分离与连续 seek、窗口/全屏控制层、截图成功/取消/失败、翻译字幕、直播刷新、动态三
+  标签及评论分页、外部应用打开、下拉/上滑和既有手势、小窗同实例/Texture 恢复与新媒体
+  释放、UGC/PGC/本地恢复、前后台及系统 PiP。三类差异的既有真机缺口未关闭；自动化通过
+  不代表 Media3 已完整替代 mpv，也不证明动画、黑帧或设备交互无回归。
+
+验证 APK 的包名均为 `com.shudo.plusplus`、应用名 `pili++`、版本 `2.1.3+1`，证书 SHA-256
+全部匹配 `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C`。
+这些是非交付验证包，versionCode 1 低于既有交付基线；未安装、未作为升级包交付、未运行
+正式交付脚本，也未变更 `tool/release_baseline.json`。准确大小、时间、源码与签名清单：
+`D:/PiliPlus/build/sync-cd096d3-validation-b5deacd/artifacts.json`。
+
+| ABI | 验证 APK 完整路径 | APK SHA-256 |
+| --- | --- | --- |
+| armeabi-v7a | `D:/PiliPlus/build/sync-cd096d3-validation-b5deacd/pili++-2.1.3+1-armeabi-v7a-release-upstream-cd096d3-validation.apk` | `08CC7F0DF0BAB2844726CADB864D7E53EF36DD9803C036DF7EE7FEB991CC7910` |
+| arm64-v8a | `D:/PiliPlus/build/sync-cd096d3-validation-b5deacd/pili++-2.1.3+1-arm64-v8a-release-upstream-cd096d3-validation.apk` | `5711008A472937A1F58B20B7C4DB7535920AF3623E2A61383E7CE6A5F1A417EE` |
+| x86_64 | `D:/PiliPlus/build/sync-cd096d3-validation-b5deacd/pili++-2.1.3+1-x86_64-release-upstream-cd096d3-validation.apk` | `00FEB061DDC14463296C5287453566C743800BA77BFBF0F5B48D90BECB117051` |
+
+全部日志、隔离环境入口和依赖补丁证据位于 `D:/PiliPlus/build/sync-cd096d3-logs`；
+后续在专用 PowerShell 进程先载入其中 `validation-env.ps1`，再使用准确 SDK，不改全局环境。
 
 ## 上游提交查询（2026-09-10）
 
