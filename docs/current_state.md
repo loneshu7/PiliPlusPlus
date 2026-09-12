@@ -6,6 +6,13 @@
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
 
+## 版本号与 GitHub Actions 防回退修复（2026-09-10）
+
+- 本批属于发布支撑性维护。按用户确认将 `pubspec.yaml` 从 `2.1.3+1` 更新为 `2.1.10+2026091001`：Android `versionName` 为 `2.1.10`，`versionCode` 为 `2026091001`，高于最近正式交付基线 `2026082501` 和此前 Action 验证包 `2026082502`，且低于 Android/Google Play 的 versionCode 上限。未修改签名、应用身份、GitHub tag 或 `tool/release_baseline.json`，当前只完成源码版本准备，不代表已经正式交付。
+- `tool/write_ci_build_metadata.ps1` 仍是 Action 构建元数据入口，现新增两层失败关闭门禁：当前 versionCode 不得低于 `tool/release_baseline.json`；同时从当前原始 Git commit object 读取全部父提交，当前值不得低于任一父提交中的 versionCode。相等值允许继续构建，便于同版本后续验证；父提交确实没有 `pubspec.yaml` 时跳过，父对象缺失或 Git/对象读取异常则终止。原始对象读取可避免浅克隆把普通提交伪装成无父提交；现有 Action 也已配置 `fetch-depth: 0`。脚本继续生成 `pili_release.json` 和 `GITHUB_ENV` 产物名版本，`.github/workflows/build.yml` 无需增加重复入口。
+- TDD 回归先证明旧脚本会接受父提交 `10` → 当前 `9` 的回退；实现后临时 Git 仓库用例均通过：低于父提交被拒绝、低于正式基线被拒绝、正常递增通过、真正根提交通过、父提交尚无 pubspec 时通过、浅克隆被拒绝、合并结果低于任一父提交时被拒绝。真实仓库脚本生成并核对 `pili.name=2.1.10`、`pili.code=2026091001`、`version=2.1.10+2026091001`；PowerShell 语法检查和 `git diff --check` 通过。
+- 使用 Flutter 3.47.3 / Dart 3.13.3 执行依赖锁定验证：首次因未指定本批独立 Pub 缓存而解析到旧的 logger/material_ui/platform 并被 `--enforce-lockfile` 正确拒绝，未修改锁文件；设置 `PUB_CACHE=D:/CodexToolchains/PiliPlus/pub-cache-upstream-cd096d3-flutter-3.47.3` 后 `flutter pub get --offline --enforce-lockfile` 通过。未执行 Flutter 测试、Android JVM 测试、APK 构建、发布校验或真机验证。
+- 前两轮独立代码审查分别发现“父提交读取失败会静默跳过”和“浅克隆会隐藏父提交”两个 Important 问题；前者已用 `git ls-tree` 区分文件缺失与 Git 异常，后者已改为解析原始 commit object，并在父对象缺失时失败关闭，修复后重新通过对应脚本用例。第三轮最终复审无 Critical、Important 或 Minor 问题，结论可交付。三类本地功能和上游热点文件未修改，没有新增播放器/页面冲突面。
 ## GitHub 同步（2026-09-10）
 
 - 用户在本地合并完成后明确要求“同步至github”。已将 `release/2.1.10` 推送到
