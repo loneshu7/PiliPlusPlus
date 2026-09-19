@@ -1,10 +1,87 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-09-10 +08:00
+> 最后核对：2026-09-19 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
+
+## 上游同步：已合回本地，真机回归待完成（2026-09-19）
+
+本节为当前同步状态；下方历次记录保留各批当时的事实。
+
+- 本批属于上游同步。用户授权“执行完整同步并验证”，并要求验证通过即推送 GitHub。从
+  `release/2.1.10@5b3ba81ea7a0223e6214994fa11df9d5e71c0b9f` 创建隔离分支
+  `sync/upstream-20260919-a85ae21`，工作区 `D:/PiliPlus/.worktrees/upstream-a85ae21`。
+  同步前 merge-base 为 `cd096d3`，领先 167、落后 52。已普通合入 52 个上游提交，目标
+  `a85ae21c005da23ad53d93f2b76e25c1ecc32dfb`；合并提交 `34def2c`，修复提交 `78504fa`。
+  合回后 `release/2.1.10` 相对 `upstream/main@a85ae21` 领先 169、落后 0。
+- 上游主要内容：`1a4bb7b feat: search all` 等 8 个综合搜索/电竞/搜索历史提交、
+  `c8cee1b opt default hwdec`、`94e413a`/`1cf440e` PlaybackState 优化、
+  `41fe782 do not pass part title`、`1525479 refa load previous video`、
+  `455254e` 中键全屏鼠标卡死修复、`d07da98 flutter 3.47.4`、`00cb572 upgrade media-kit`
+  及多轮依赖升级、`ce17223 Release 2.1.4`、Linux/Windows 桌面 deeplink 与 webview。
+  桌面实现随上游保留，不扩大本项目 Android 支持范围。
+- 实际冲突 8 处：6 个文本冲突文件共 10 块，外加 `lib/pages/search_panel/all/controller.dart`
+  与 `view.dart` 的 modify/delete。处理结果：
+  - 综合搜索按范围约定接受上游实现，恢复本地曾在 `ad1f610` 删除的 `search_panel/all`
+    目录、`SearchType.all` 与 `Api.searchAll`；`search_result/view.dart` 采用上游分支。
+  - `audio_handler.dart` 接受上游全部语义，仅保留本地 `_hasPlaybackOwner`（独立音频等
+    非 PlPlayerController 会话需要），并把上游 `PlPlayerController.instance!.isAutoEnterPip`
+    改回 `instance?.isAutoEnterPip == true`，避免独立音频场景空断言抛错。
+  - `pl_player/controller.dart` 采纳上游 wakelock/PlaybackState 500ms 延迟策略、桌面 PiP
+    最小尺寸与 `_videoSizeListeners` 清理，保留本地 `_syncAutoEnterPip`（含小窗判断）和
+    私有 `_videoPlayerController`。为保持等价，Media3 事件链同步改造：playing 立即通知并
+    取消定时器，paused/completed 延迟 500ms，buffering 在未完成时取消定时器，
+    `_finishExoFailure` 先取消定时器再立即回传 paused。
+  - `pages/audio/controller.dart` 接入上游 `_statusTimer`/`_stopStatusTimer` 与 buffering
+    监听，保留本地 `_handlePlaybackCompleted`、`_blockPlayingListeners` 和 `_isDisposed`；
+    Media3 独立音频路径同样使用延迟通知。
+  - `pubspec.yaml` 保留 `pili++` 版本 `2.1.10+2026091001`，其余依赖全部跟随上游；额外显式
+    声明上游已移除的 `package_info_plus`，因为本地版本更新检查仍依赖它（锁文件仅由
+    transitive 变为 direct main，版本 10.2.1 不变）。
+- 上游此次修复了此前记录的 P3 回归：横向 seek 结束震动已移到 `pl_player/view/view.dart`
+  的 `_onHorizontalDragEnd`，不再需要本地跟进。
+- Media3 Kotlin 桥接、Texture、下拉竖屏全屏状态机、小窗服务与应用身份未被上游改动覆盖，
+  本批未新增页面级后端依赖或额外本地冲突面。
+- 工具链：新建隔离 Flutter 3.47.4（`D:/CodexToolchains/PiliPlus/flutter-sdk/flutter-3.47.4`，
+  tag `3.47.4`、commit `9584c671`、Dart 3.13.3，引擎版本与 3.47.3 相同），由 3.47.3 目录复制后
+  fetch tag 并 checkout，未修改原 3.47.3 SDK。仓库 24 个 Android 补丁全部通过正向检查、应用
+  和反向检查；独立 Pub 缓存
+  `D:/CodexToolchains/PiliPlus/pub-cache-upstream-a85ae21-flutter-3.47.4`，
+  `pub get --enforce-lockfile` 通过，material_ui 升至 1.3.0 且 9 个 Android 补丁全部通过并在
+  后续 pub get 后复验仍生效。未运行仓库 `patch.ps1`（其含全局 Git 身份修改与缓存删除），
+  只复用其准确补丁清单与顺序。
+- 自动化验证均针对准确源码 `78504fa`，构建时工作区干净：
+  - 格式检查：1347 文件、0 改动；`dart analyze` 退出 0，0 error/warning、35 条 info。
+    首轮 analyze 发现 9 个 error（`Api.searchAll` 缺失、`PlayerStatus` 未导入），已在
+    `78504fa` 修复后复验通过。
+  - 完整 Flutter 测试：75/75；Android `:app:testDebugUnitTest`：6 个套件 30/30，0 失败 0 跳过。
+    合回原工作区并切换到 3.47.4/独立缓存后，`pub get --offline --enforce-lockfile` 通过、
+    锁文件无额外变化，完整 Flutter 测试再次 75/75。
+  - Android Release 分 ABI 构建：armeabi-v7a、arm64-v8a、x86_64 全部成功；`git diff --check` 通过。
+    首次构建因隔离 worktree 缺少未跟踪的 `gradlew`/`key.properties`/keystore 失败，复制本地
+    未跟踪文件后重建成功，不是源码或测试失败。
+  - Gradle 沿用独立缓存、进程内 Kotlin 与关闭增量；仍有既有 compileSdk、Kotlin/Gradle 弃用提示。
+- 验证 APK（非交付包）包名均为 `com.shudo.plusplus`、应用名 `pili++`、版本 `2.1.10+2026091001`，
+  证书 SHA-256 全部匹配 `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C`。
+  未安装、未交付、未运行正式交付脚本，也未变更 `tool/release_baseline.json`。清单见
+  `D:/PiliPlus/build/sync-a85ae21-validation-78504fa/artifacts.json`。
+
+| ABI | 验证 APK 完整路径 | APK SHA-256 |
+| --- | --- | --- |
+| armeabi-v7a | `D:/PiliPlus/build/sync-a85ae21-validation-78504fa/pili++-2.1.10-2026091001-armeabi-v7a-release-upstream-a85ae21-validation.apk` | `C11326C6A792CA5D89560A9765F2A01ADA1188D5BCA2E83A442C7DBE1BA78D01` |
+| arm64-v8a | `D:/PiliPlus/build/sync-a85ae21-validation-78504fa/pili++-2.1.10-2026091001-arm64-v8a-release-upstream-a85ae21-validation.apk` | `AB20941C304915D9BB246ADDCBC74261B05A4E065367717BC1FAC0EBD3706991` |
+| x86_64 | `D:/PiliPlus/build/sync-a85ae21-validation-78504fa/pili++-2.1.10-2026091001-x86_64-release-upstream-a85ae21-validation.apk` | `4942834CD6AD6002967916E16F57B811194EE0472BE2B0EF8761F79249039E0F` |
+
+- 日志、隔离环境入口和补丁证据位于 `D:/PiliPlus/build/sync-a85ae21-logs`；后续在专用
+  PowerShell 进程先载入其中 `validation-env.ps1`，再使用准确 SDK，不改全局环境。
+  原工作区旧环境配置另存于该目录的 `pre-integration-local-environment`。
+- 待真机验证（自动化通过不代表这些场景完成）：综合搜索新面板与电竞卡片、搜索历史/建议、
+  mpv 与 Media3 的暂停/缓冲/完成期间媒体通知与 wakelock 行为、独立音频通知与音频焦点、
+  默认 hwdec 调整后的硬解回退、视频页下拉竖屏全屏与上滑退出、应用内小窗同会话恢复与新媒体
+  释放、系统 PiP 往返、前后台与生命周期、外部应用打开选择器。三类本地差异的既有真机缺口
+  未关闭；未交付、未创建 tag 或 GitHub Release。
 
 ## 版本号与 GitHub Actions 防回退修复（2026-09-10）
 
