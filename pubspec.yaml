@@ -134,6 +134,8 @@ dependencies:
     git:
       url: https://github.com/bggRGjQaUbCoE/flutter_native_device_orientation.git
       ref: master
+  # pili++ 版本更新检查读取安装包版本，显式声明上游已移除的直接依赖。
+  package_info_plus: ^10.1.0
   path: ^1.9.1
   path_provider: ^2.1.5
   permission_handler_android: ^14.0.0

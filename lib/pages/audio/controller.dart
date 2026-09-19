@@ -697,7 +697,7 @@ class AudioController extends GetxController
       if (event.playing) {
         _stopStatusTimer();
         videoPlayerServiceHandler?.onStatusChange(
-          PlayerStatus.playing,
+          .playing,
           event.buffering,
           false,
         );
@@ -706,7 +706,7 @@ class AudioController extends GetxController
         _statusTimer = Timer(
           const Duration(milliseconds: 500),
           () => videoPlayerServiceHandler?.onStatusChange(
-            PlayerStatus.paused,
+            .paused,
             event.buffering,
             false,
           ),
@@ -725,7 +725,7 @@ class AudioController extends GetxController
     _statusTimer = Timer(
       const Duration(milliseconds: 500),
       () => videoPlayerServiceHandler?.onStatusChange(
-        PlayerStatus.completed,
+        .completed,
         false,
         false,
       ),
