@@ -2,6 +2,7 @@ package com.example.piliplus
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class Media3BufferPolicyTest {
@@ -10,11 +11,11 @@ class Media3BufferPolicyTest {
         assertEquals(
             Media3BufferPolicy(
                 targetBufferBytes = 8 * 1024 * 1024,
-                minBufferMs = 5000,
+                minBufferMs = 16000,
                 maxBufferMs = 16000,
-                bufferForPlaybackMs = 2500,
-                bufferForPlaybackAfterRebufferMs = 5000,
-                backBufferDurationMs = 16000,
+                bufferForPlaybackMs = 1000,
+                bufferForPlaybackAfterRebufferMs = 2000,
+                backBufferDurationMs = 0,
             ),
             resolveMedia3BufferPolicy(
                 targetBufferBytes = 8 * 1024 * 1024,
@@ -33,7 +34,7 @@ class Media3BufferPolicyTest {
                 maxBufferMs = 1000,
                 bufferForPlaybackMs = 1000,
                 bufferForPlaybackAfterRebufferMs = 1000,
-                backBufferDurationMs = 1000,
+                backBufferDurationMs = 0,
             ),
             resolveMedia3BufferPolicy(
                 targetBufferBytes = 1,
@@ -52,5 +53,38 @@ class Media3BufferPolicyTest {
                 isLive = true,
             ),
         )
+    }
+
+    @Test
+    fun backBufferNeverSharesTheForwardByteBudget() {
+        val policy = resolveMedia3BufferPolicy(
+            targetBufferBytes = 8 * 1024 * 1024,
+            bufferDurationMs = 16000,
+            isLive = false,
+        )!!
+        assertEquals(0, policy.backBufferDurationMs)
+    }
+
+    @Test
+    fun startThresholdsNeverExceedTheBufferingTarget() {
+        listOf(0, 1, 400, 900, 1500, 16000, 60000).forEach { requested ->
+            val policy = resolveMedia3BufferPolicy(
+                targetBufferBytes = 8 * 1024 * 1024,
+                bufferDurationMs = requested,
+                isLive = false,
+            )!!
+            assertTrue(
+                "bufferForPlaybackMs must stay within minBufferMs for $requested",
+                policy.bufferForPlaybackMs <= policy.minBufferMs,
+            )
+            assertTrue(
+                "bufferForPlaybackAfterRebufferMs must stay within minBufferMs for $requested",
+                policy.bufferForPlaybackAfterRebufferMs <= policy.minBufferMs,
+            )
+            assertTrue(
+                "minBufferMs must stay within maxBufferMs for $requested",
+                policy.minBufferMs <= policy.maxBufferMs,
+            )
+        }
     }
 }

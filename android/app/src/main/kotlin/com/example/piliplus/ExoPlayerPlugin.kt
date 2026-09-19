@@ -1553,7 +1553,13 @@ private data class Media3PlaybackConfiguration(
             append(policy.minBufferMs)
             append(" ms, maxBuffer=")
             append(policy.maxBufferMs)
-            append(" ms, timePriority=true")
+            append(" ms, startPlayback=")
+            append(policy.bufferForPlaybackMs)
+            append(" ms, resumePlayback=")
+            append(policy.bufferForPlaybackAfterRebufferMs)
+            append(" ms, backBuffer=")
+            append(policy.backBufferDurationMs)
+            append(" ms, timePriority=false")
         }
 
     fun createLoadControl(): DefaultLoadControl {
@@ -1567,7 +1573,7 @@ private data class Media3PlaybackConfiguration(
                 policy.bufferForPlaybackAfterRebufferMs,
             )
             .setTargetBufferBytes(policy.targetBufferBytes)
-            .setPrioritizeTimeOverSizeThresholdsForStreaming(true)
+            .setPrioritizeTimeOverSizeThresholdsForStreaming(false)
             .setBackBuffer(policy.backBufferDurationMs, false)
             .build()
     }

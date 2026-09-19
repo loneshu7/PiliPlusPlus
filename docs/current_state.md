@@ -6,6 +6,46 @@
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
 
+## Media3 点播缓冲策略死锁修复（2026-09-19）
+
+- 本批属于 Media3 差异维护。用户真机反馈两个症状：点播时缓冲条会突然停止增长；以及
+  缓冲条明显有数据但画面就是不恢复播放。经核对 Media3 1.10.1 `DefaultLoadControl`
+  源码，两者是同一套本地缓冲配置的必然结果，不是偶发网络问题。
+- 根因一（缓冲停止增长）：`shouldContinueLoading` 的 `targetBufferSizeReached` 基于
+  `getTotalBufferBytesAllocated`，即该 player 的 allocator 总分配量，其中包含 back buffer
+  保留的已播放样本。此前 `Media3BufferPolicy` 把 `backBufferDurationMs` 设为与前向相同的
+  `maxBufferMs`（默认 16000 ms），与前向共用同一个 `targetBufferBytes` 预算（默认
+  `Pref.bufferSize * 0x200000` = 8 MiB）。mpv 侧 `demuxer-max-bytes` 与
+  `demuxer-max-back-bytes` 是两份独立预算（`storage_pref.dart`），直接把该字节数搬到
+  Media3 属于语义错配。播放一段时间后后向数据吃满预算，加载在缓冲刚达 `minBufferMs`
+  时即被切断。
+- 根因二（有缓存但不播）：`shouldStartPlayback` 的第三个分支是官方逃生条款——字节预算
+  已满时即使时长不足也允许起播，但它以 `!prioritizeTimeOverSizeThresholds` 为前提。此前
+  `createLoadControl` 传入 `setPrioritizeTimeOverSizeThresholdsForStreaming(true)`，该逃生
+  条款被关闭；同时 `bufferForPlaybackAfterRebufferMs` 被设为 5000 ms（官方默认 2000 ms），
+  于是“恢复播放需要 5 s”与根因一的“到 `minBufferMs` 即停止加载”落在同一临界点上，
+  形成互相等待的死锁，需靠 back buffer 回收或网络波动才能脱离。
+- 修复限定在缓冲策略本身，未改动任何用户可见设置项语义：`backBufferDurationMs` 改为 0；
+  `minBufferMs` 改为与 `maxBufferMs` 一致，使前向时长成为唯一缓冲目标；
+  `bufferForPlaybackMs` 2500 → 1000、`bufferForPlaybackAfterRebufferMs` 5000 → 2000，
+  与 Media3 官方默认对齐；`setPrioritizeTimeOverSizeThresholdsForStreaming` 改为 false，
+  恢复官方“字节满则起播、起播消耗后继续加载”的自洽循环。`targetBufferBytes` 仍沿用
+  用户“缓冲大小”偏好，现在只作为前向内存上限。直播继续保持 Media3 默认策略不变。
+- `playbackConfiguration` 诊断字符串补充 `startPlayback`、`resumePlayback`、`backBuffer`
+  并把 `timePriority` 改为如实输出 false，便于真机日志直接核对生效值。设置页“缓冲大小”
+  与“缓冲时长”的说明文案同步更新为当前实际行为。
+- `Media3BufferPolicyTest` 更新既有两例期望值，并新增两例：back buffer 恒为 0；在
+  0/1/400/900/1500/16000/60000 ms 偏好下起播与恢复阈值始终不超过 `minBufferMs`、
+  `minBufferMs` 不超过 `maxBufferMs`，防止再次配出 `DefaultLoadControl.Builder` 断言边界。
+- 工具链 `D:\CodexToolchains\PiliPlus\flutter-sdk\flutter-3.47.4`（Flutter 3.47.4、
+  Dart 3.13.3）与独立缓存 `pub-cache-upstream-a85ae21-flutter-3.47.4`，JDK 17.0.19+10。
+  验证结果：格式检查 1347 文件 0 changed；`dart analyze` 0 error、0 warning、34 条既有
+  info；完整 Flutter 测试 75/75；Android `:app:testDebugUnitTest` 32/32，0 失败 0 跳过
+  （`Media3BufferPolicyTest` 5/5）。
+- 本批未执行真机回归。修复效果必须在 Android 真机上按以下场景确认后才能视为完成：高码率
+  点播长时间播放时缓冲条是否持续推进、弱网卡顿后是否在约 2 s 内恢复、起播耗时、4K/HDR
+  内存占用，以及直播、独立音频、本地文件与换源未受影响。
+
 ## 上游同步：已合回本地，真机回归待完成（2026-09-19）
 
 本节为当前同步状态；下方历次记录保留各批当时的事实。
