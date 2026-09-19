@@ -82,6 +82,12 @@
   默认 hwdec 调整后的硬解回退、视频页下拉竖屏全屏与上滑退出、应用内小窗同会话恢复与新媒体
   释放、系统 PiP 往返、前后台与生命周期、外部应用打开选择器。三类本地差异的既有真机缺口
   未关闭；未交付、未创建 tag 或 GitHub Release。
+- 验证通过后按用户授权推送：先 `git fetch origin` 确认领先 55、落后 0，普通推送
+  `release/2.1.10` 到 `https://github.com/loneshu7/PiliPlusPlus.git`，远程 HEAD 已经
+  `git ls-remote` 核实为 `eb048c0ae1965c9cede974cc1498d8bcdddf013c`，与本地一致。未强推、
+  未修改 `origin/main`、未创建标签或 Release。
+- 收尾：隔离 worktree `.worktrees/upstream-a85ae21` 已删除（先清除其中临时复制的 keystore 与
+  `key.properties` 副本），分支 `sync/upstream-20260919-a85ae21` 保留备查；原有未跟踪 `nul` 保留。
 
 ## 版本号与 GitHub Actions 防回退修复（2026-09-10）
 
