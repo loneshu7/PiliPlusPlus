@@ -34,7 +34,6 @@ import 'package:PiliPlus/plugin/pl_player/exo_player/exo_player_controller.dart'
 import 'package:PiliPlus/plugin/pl_player/models/audio_normalization_filter.dart';
 import 'package:PiliPlus/plugin/pl_player/models/player_media_track.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
-import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/services/audio_session.dart';
 import 'package:PiliPlus/services/shutdown_timer_service.dart';
@@ -176,6 +175,12 @@ class AudioController extends GetxController
   late final AudioSessionPlayerCallbacks _audioSessionCallbacks;
   final Set<ValueChanged<Duration>> _blockPositionListeners = {};
   final Set<ValueChanged<bool>> _blockPlayingListeners = {};
+
+  Timer? _statusTimer;
+  void _stopStatusTimer() {
+    _statusTimer?.cancel();
+    _statusTimer = null;
+  }
 
   void toggleVolume() {
     if (_lastVolume == null) {
@@ -609,18 +614,28 @@ class AudioController extends GetxController
         this.duration.value = duration.inSeconds;
       }),
       stream.playing.listen((playing) {
-        final PlayerStatus playerStatus;
         if (playing) {
           animController.forward();
-          playerStatus = PlayerStatus.playing;
+          _stopStatusTimer();
+          videoPlayerServiceHandler?.onStatusChange(.playing, false, false);
         } else {
           animController.reverse();
-          playerStatus = PlayerStatus.paused;
+          _statusTimer?.cancel();
+          _statusTimer = Timer(
+            const Duration(milliseconds: 500),
+            () => videoPlayerServiceHandler?.onStatusChange(
+              .paused,
+              false,
+              false,
+            ),
+          );
         }
-        videoPlayerServiceHandler?.onStatusChange(playerStatus, false, false);
         for (final listener in _blockPlayingListeners) {
           listener(playing);
         }
+      }),
+      stream.buffering.listen((buffering) {
+        if (buffering && !player!.state.completed) _stopStatusTimer();
       }),
       stream.completed.listen((completed) {
         if (completed) {
@@ -637,6 +652,7 @@ class AudioController extends GetxController
     if (event.failure case final failure?) {
       unawaited(audioSessionHandler?.setActive(false));
       animController.reverse();
+      _stopStatusTimer();
       videoPlayerServiceHandler?.onStatusChange(.paused, false, false);
       final diagnostics = failure.diagnostics(
         retryAttempt: 0,
@@ -678,12 +694,24 @@ class AudioController extends GetxController
       } else {
         animController.reverse();
       }
-      final status = event.playing ? PlayerStatus.playing : PlayerStatus.paused;
-      videoPlayerServiceHandler?.onStatusChange(
-        status,
-        event.buffering,
-        false,
-      );
+      if (event.playing) {
+        _stopStatusTimer();
+        videoPlayerServiceHandler?.onStatusChange(
+          PlayerStatus.playing,
+          event.buffering,
+          false,
+        );
+      } else {
+        _statusTimer?.cancel();
+        _statusTimer = Timer(
+          const Duration(milliseconds: 500),
+          () => videoPlayerServiceHandler?.onStatusChange(
+            PlayerStatus.paused,
+            event.buffering,
+            false,
+          ),
+        );
+      }
       for (final listener in _blockPlayingListeners) {
         listener(event.playing);
       }
@@ -693,10 +721,14 @@ class AudioController extends GetxController
   void _handlePlaybackCompleted(Duration mediaDuration) {
     _videoDetailController?.playedTime = mediaDuration;
     animController.reverse();
-    videoPlayerServiceHandler?.onStatusChange(
-      PlayerStatus.completed,
-      false,
-      false,
+    _statusTimer?.cancel();
+    _statusTimer = Timer(
+      const Duration(milliseconds: 500),
+      () => videoPlayerServiceHandler?.onStatusChange(
+        PlayerStatus.completed,
+        false,
+        false,
+      ),
     );
     for (final listener in _blockPlayingListeners) {
       listener(false);
@@ -1135,6 +1167,7 @@ class AudioController extends GetxController
   @override
   void onClose() {
     _isDisposed = true;
+    _stopStatusTimer();
     shutdownTimerService
       ..onPause = null
       ..isPlaying = null
