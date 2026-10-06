@@ -6,6 +6,18 @@
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
 
+## GitHub 同步（2026-10-06）
+
+- 用户在上游同步与验证完成后明确要求“提交到github”。已先 `git fetch origin`，确认
+  `release/2.1.10` 相对远程同名分支领先 74、落后 0；随后普通推送至
+  `https://github.com/loneshu7/PiliPlusPlus.git` 的 `release/2.1.10`。
+  首次推送后用 `git ls-remote` 核实远程 HEAD 为
+  `c4bb7c9d66cd80ab71d6318b37f1e8793d7c0f53`，与本地一致。本条另作文档提交并同步。
+- 未强推、未修改 `origin/main`、未创建 tag 或 GitHub Release；原有未跟踪 `nul` 保留。
+  本批仅补充推送记录，应用源码与已验证的 `4305b0c` 相同，没有新 APK、构建或真机验收。
+  沿用下节 77/77 Flutter 测试、32/32 JVM 与三 ABI Release 验证；没有新增 CI 通过结论，
+  三类本地差异的既有缺口和待真机场景不因推送而关闭。
+
 ## 上游同步：已合回本地，待真机回归（2026-10-06）
 
 - 本批属于上游同步。用户授权“拉取到我们的项目，不要影响我们的修改”。全程在当前目录
