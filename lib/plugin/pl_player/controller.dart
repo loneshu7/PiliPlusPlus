@@ -1025,7 +1025,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     _isInAppMiniPlayer = true;
     _syncAutoEnterPip(playerStatus.isPlaying);
     // The page owner is being disposed; retain only this session's playback.
-    setPlayCallBack(() => play());
+    setPlayCallBack(play);
     controls = false;
     if (Platform.isAndroid && !setSystemBrightness) {
       ScreenBrightnessPlatform.instance.resetApplicationScreenBrightness();
