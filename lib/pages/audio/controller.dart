@@ -24,8 +24,6 @@ import 'package:PiliPlus/pages/common/common_intro_controller.dart'
 import 'package:PiliPlus/pages/audio/exo_audio_event_tracker.dart';
 import 'package:PiliPlus/pages/dynamics_repost/view.dart';
 import 'package:PiliPlus/pages/main_reply/view.dart';
-import 'package:PiliPlus/pages/setting/models/play_settings.dart'
-    show kMaxVolume;
 import 'package:PiliPlus/pages/sponsor_block/block_mixin.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/triple_mixin.dart';
@@ -34,6 +32,7 @@ import 'package:PiliPlus/plugin/pl_player/exo_player/exo_player_controller.dart'
 import 'package:PiliPlus/plugin/pl_player/models/audio_normalization_filter.dart';
 import 'package:PiliPlus/plugin/pl_player/models/player_media_track.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
+import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/services/audio_session.dart';
 import 'package:PiliPlus/services/shutdown_timer_service.dart';
@@ -84,6 +83,7 @@ class AudioController extends GetxController
   StreamSubscription<ExoPlayerEvent>? _exoSubscription;
   ExoAudioEventTracker? _exoEventTracker;
   String? _lastExoFailure;
+  int? _exoGeneration;
   bool _isDisposed = false;
 
   late final bool useExoPlayer = Platform.isAndroid && Pref.useExoPlayer;
@@ -155,6 +155,17 @@ class AudioController extends GetxController
 
   late double speed = 1.0;
 
+  void setSpeed(double value) {
+    if (!playerReady || _isDisposed) return;
+    speed = value;
+    if (useExoPlayer) {
+      unawaited(_exoPlayer?.setPlaybackSpeed(value));
+    } else {
+      unawaited(player?.setRate(value));
+    }
+    _updatePlaybackState();
+  }
+
   late final Rx<PlayRepeat> playMode = Pref.audioPlayMode.obs;
 
   @override
@@ -177,6 +188,15 @@ class AudioController extends GetxController
   final Set<ValueChanged<bool>> _blockPlayingListeners = {};
 
   Timer? _statusTimer;
+
+  void _startStatusTimer() {
+    _statusTimer?.cancel();
+    _statusTimer = Timer(
+      const Duration(milliseconds: 500),
+      _updatePlaybackState,
+    );
+  }
+
   void _stopStatusTimer() {
     _statusTimer?.cancel();
     _statusTimer = null;
@@ -240,6 +260,8 @@ class AudioController extends GetxController
       onPlay: onPlay,
       onPause: onPause,
       onSeek: onSeek,
+      onSkipToNext: playNext,
+      onSkipToPrevious: playPrev,
     );
     _audioSessionCallbacks = AudioSessionPlayerCallbacks(
       isPlaying: isPlaying,
@@ -282,9 +304,9 @@ class AudioController extends GetxController
   }
 
   Future<void> onPlay() async {
-    if (!playerReady) return;
+    if (!playerReady || _isDisposed) return;
     final hasAudioFocus = await audioSessionHandler?.setActive(true) ?? true;
-    if (!hasAudioFocus) return;
+    if (!hasAudioFocus || _isDisposed || !playerReady) return;
     try {
       if (useExoPlayer) {
         final player = _exoPlayer!;
@@ -313,10 +335,17 @@ class AudioController extends GetxController
   }
 
   Future<void> onSeek(Duration duration) async {
-    if (useExoPlayer) {
-      await _exoPlayer?.seek(duration);
-    } else {
-      await player?.seek(duration);
+    if (!playerReady || _isDisposed) return;
+    _updatePlaybackState(position: duration);
+    try {
+      if (useExoPlayer) {
+        await _exoPlayer?.seek(duration);
+      } else {
+        await player?.seek(duration);
+      }
+    } catch (_) {
+      _updatePlaybackState();
+      rethrow;
     }
   }
 
@@ -495,6 +524,15 @@ class AudioController extends GetxController
         referer: referer,
         volume: volume,
       ).onError((error, stackTrace) {
+        if (_isDisposed) return;
+        _playerStatus = .paused;
+        _playerBuffering = false;
+        _stopStatusTimer();
+        animController.reverse();
+        _updatePlaybackState(debugLabel: 'onAudioOpenFailed');
+        for (final listener in _blockPlayingListeners) {
+          listener(false);
+        }
         SmartDialog.showToast('音频播放失败');
         Utils.reportError(
           'Standalone audio open failed: $error',
@@ -511,13 +549,21 @@ class AudioController extends GetxController
     http_model.Volume? volume,
   }) async {
     await _initPlayerIfNeeded();
-    if (!playerReady) return;
+    if (!playerReady || _isDisposed) return;
     final hasAudioFocus = await audioSessionHandler?.setActive(true) ?? true;
-    if (!hasAudioFocus) return;
+    if (!hasAudioFocus || _isDisposed || !playerReady) return;
+    _stopStatusTimer();
     try {
       if (useExoPlayer) {
         final player = _exoPlayer!;
         _lastExoFailure = null;
+        // Advance before open so already queued events from the old source
+        // cannot update notifications or run completion/focus side effects.
+        _exoGeneration = (_exoGeneration ?? player.state.generation) + 1;
+        _exoEventTracker?.dispose();
+        _exoEventTracker = ExoAudioEventTracker();
+        _playerStatus = .paused;
+        _playerBuffering = false;
         await player.open(
           videoUrl: url,
           headers: {
@@ -543,6 +589,28 @@ class AudioController extends GetxController
       rethrow;
     }
     _start = null;
+  }
+
+  PlayerStatus _playerStatus = .paused;
+  bool _playerBuffering = false;
+  void _updatePlaybackState({Duration? position, String? debugLabel}) {
+    if (_isDisposed) return;
+    final handler = videoPlayerServiceHandler;
+    if (handler == null ||
+        !handler.isCurrentStandalonePlayer(hashCode.toString())) {
+      return;
+    }
+    final currentPosition =
+        (useExoPlayer ? _exoPlayer?.state.position : player?.state.position) ??
+        Duration(seconds: this.position.value);
+    handler.onUpdateState(
+      _playerStatus,
+      _playerBuffering,
+      false,
+      position: position ?? currentPosition,
+      speed: speed,
+      debugLabel: debugLabel,
+    );
   }
 
   Future<void> _initPlayerIfNeeded() async {
@@ -586,7 +654,6 @@ class AudioController extends GetxController
           'volume': PlatformUtils.isDesktop
               ? (desktopVolume.value * 100).toString()
               : Pref.playerVolume.toString(),
-          'volume-max': kMaxVolume.toString(),
           ...Pref.initBuffer(),
         },
       ),
@@ -602,9 +669,11 @@ class AudioController extends GetxController
         if (isDragging) return;
         final seconds = position.inSeconds;
         if (seconds != this.position.value) {
+          if (_statusTimer?.isActive != true) {
+            _updatePlaybackState(position: position);
+          }
           this.position.value = seconds;
           _videoDetailController?.playedTime = position;
-          videoPlayerServiceHandler?.onPositionChange(position);
         }
         for (final listener in _blockPositionListeners) {
           listener(position);
@@ -616,26 +685,24 @@ class AudioController extends GetxController
       stream.playing.listen((playing) {
         if (playing) {
           animController.forward();
+          _playerStatus = .playing;
           _stopStatusTimer();
-          videoPlayerServiceHandler?.onStatusChange(.playing, false, false);
+          _updatePlaybackState();
         } else {
           animController.reverse();
-          _statusTimer?.cancel();
-          _statusTimer = Timer(
-            const Duration(milliseconds: 500),
-            () => videoPlayerServiceHandler?.onStatusChange(
-              .paused,
-              false,
-              false,
-            ),
-          );
+          _playerStatus = .paused;
+          _startStatusTimer();
         }
         for (final listener in _blockPlayingListeners) {
           listener(playing);
         }
       }),
-      stream.buffering.listen((buffering) {
-        if (buffering && !player!.state.completed) _stopStatusTimer();
+      stream.buffering.listen((bool buffering) {
+        _playerBuffering = buffering;
+        if (!_playerStatus.isCompleted) {
+          _stopStatusTimer();
+          _updatePlaybackState();
+        }
       }),
       stream.completed.listen((completed) {
         if (completed) {
@@ -646,6 +713,16 @@ class AudioController extends GetxController
   }
 
   void _handleExoEvent(ExoPlayerEvent event) {
+    if (_isDisposed ||
+        (_exoGeneration != null && event.generation < _exoGeneration!)) {
+      return;
+    }
+    if (_exoGeneration != event.generation) {
+      _exoGeneration = event.generation;
+      _exoEventTracker?.dispose();
+      _exoEventTracker = ExoAudioEventTracker();
+      _stopStatusTimer();
+    }
     final transition = _exoEventTracker?.accept(event);
     if (transition == null || transition.ignored) return;
 
@@ -653,7 +730,16 @@ class AudioController extends GetxController
       unawaited(audioSessionHandler?.setActive(false));
       animController.reverse();
       _stopStatusTimer();
-      videoPlayerServiceHandler?.onStatusChange(.paused, false, false);
+      _playerStatus = .paused;
+      _playerBuffering = false;
+      speed = event.speed;
+      _updatePlaybackState(
+        position: event.position,
+        debugLabel: 'onAudioPlaybackFailed',
+      );
+      for (final listener in _blockPlayingListeners) {
+        listener(false);
+      }
       final diagnostics = failure.diagnostics(
         retryAttempt: 0,
         retryLimit: 0,
@@ -665,6 +751,7 @@ class AudioController extends GetxController
       }
       return;
     }
+    if (_lastExoFailure != null && !event.ready) return;
     if (event.ready) {
       _lastExoFailure = null;
     }
@@ -674,7 +761,6 @@ class AudioController extends GetxController
       if (seconds != position.value) {
         position.value = seconds;
         _videoDetailController?.playedTime = event.position;
-        videoPlayerServiceHandler?.onPositionChange(event.position);
       }
     }
     for (final listener in _blockPositionListeners) {
@@ -684,52 +770,42 @@ class AudioController extends GetxController
       duration.value = event.duration.inSeconds;
     }
 
+    final bufferingChanged = _playerBuffering != event.buffering;
+    final speedChanged = speed != event.speed;
+    _playerBuffering = event.buffering;
+    speed = event.speed;
     if (transition.completedNow) {
       _handlePlaybackCompleted(event.duration);
       return;
     }
     if (transition.statusChanged) {
+      _playerStatus = event.playing ? .playing : .paused;
       if (event.playing) {
         animController.forward();
+        _stopStatusTimer();
       } else {
         animController.reverse();
+        _startStatusTimer();
       }
-      if (event.playing) {
+      // Buffering changes must be reflected immediately, including paused seeks.
+      if (bufferingChanged && !_playerStatus.isCompleted) {
         _stopStatusTimer();
-        videoPlayerServiceHandler?.onStatusChange(
-          .playing,
-          event.buffering,
-          false,
-        );
-      } else {
-        _statusTimer?.cancel();
-        _statusTimer = Timer(
-          const Duration(milliseconds: 500),
-          () => videoPlayerServiceHandler?.onStatusChange(
-            .paused,
-            event.buffering,
-            false,
-          ),
-        );
       }
       for (final listener in _blockPlayingListeners) {
         listener(event.playing);
       }
+    }
+    if (_statusTimer?.isActive != true || speedChanged) {
+      _updatePlaybackState(position: event.position);
     }
   }
 
   void _handlePlaybackCompleted(Duration mediaDuration) {
     _videoDetailController?.playedTime = mediaDuration;
     animController.reverse();
-    _statusTimer?.cancel();
-    _statusTimer = Timer(
-      const Duration(milliseconds: 500),
-      () => videoPlayerServiceHandler?.onStatusChange(
-        .completed,
-        false,
-        false,
-      ),
-    );
+    _playerStatus = .completed;
+    _playerBuffering = false;
+    _startStatusTimer();
     for (final listener in _blockPlayingListeners) {
       listener(false);
     }
@@ -1067,16 +1143,6 @@ class AudioController extends GetxController
     });
   }
 
-  void setSpeed(double speed) {
-    if (!playerReady) return;
-    this.speed = speed;
-    if (useExoPlayer) {
-      unawaited(_exoPlayer?.setPlaybackSpeed(speed));
-    } else {
-      unawaited(player?.setRate(speed));
-    }
-  }
-
   @override
   (Object, int) get getFavRidType => (oid, isUgc ? 2 : 12);
 
@@ -1174,7 +1240,8 @@ class AudioController extends GetxController
       ..reset();
     videoPlayerServiceHandler
       ?..onVideoDetailDispose(hashCode.toString())
-      ..unregisterStandalonePlayer(hashCode.toString());
+      ..unregisterStandalonePlayer(hashCode.toString())
+      ..clearIfNeeded();
     final releaseAudioFocus =
         audioSessionHandler?.isCurrentStandalonePlayer(
           _audioSessionCallbacks,

@@ -8,6 +8,10 @@ import 'package:PiliPlus/models_new/live/live_room_info_h5/data.dart';
 import 'package:PiliPlus/models_new/pgc/pgc_info_model/episode.dart';
 import 'package:PiliPlus/models_new/video/video_detail/data.dart';
 import 'package:PiliPlus/models_new/video/video_detail/page.dart';
+import 'package:PiliPlus/pages/common/common_intro_controller.dart';
+import 'package:PiliPlus/pages/video/introduction/local/controller.dart';
+import 'package:PiliPlus/pages/video/introduction/pgc/controller.dart';
+import 'package:PiliPlus/pages/video/introduction/ugc/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
@@ -16,6 +20,8 @@ import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:collection/collection.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:path/path.dart' as path;
 
 Future<VideoPlayerServiceHandler> initAudioService() {
@@ -38,16 +44,28 @@ typedef _StandalonePlayerControls = ({
   Future<void>? Function() onPlay,
   Future<void>? Function() onPause,
   Future<void>? Function(Duration position) onSeek,
+  void Function()? onSkipToNext,
+  void Function()? onSkipToPrevious,
 });
+
+typedef _StatusConfig = (
+  PlayerStatus status,
+  bool isBuffering,
+  bool isLive,
+  double speed,
+);
 
 class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
   static final List<MediaItem> _item = [];
+  static final Map<String, String> _mediaOwners = {};
   final Map<String, _StandalonePlayerControls> _standalonePlayers = {};
   bool enableBackgroundPlay = Pref.enableBackgroundPlay;
 
   Future<void>? Function()? onPlay;
   Future<void>? Function()? onPause;
   Future<void>? Function(Duration position)? onSeek;
+  void Function()? onSkipToNext;
+  void Function()? onSkipToPrevious;
 
   bool get _hasPlaybackOwner =>
       _standalonePlayers.isNotEmpty || PlPlayerController.instanceExists();
@@ -57,12 +75,16 @@ class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
     required Future<void>? Function() onPlay,
     required Future<void>? Function() onPause,
     required Future<void>? Function(Duration position) onSeek,
+    void Function()? onSkipToNext,
+    void Function()? onSkipToPrevious,
   }) {
     _standalonePlayers.remove(ownerId);
     _standalonePlayers[ownerId] = (
       onPlay: onPlay,
       onPause: onPause,
       onSeek: onSeek,
+      onSkipToNext: onSkipToNext,
+      onSkipToPrevious: onSkipToPrevious,
     );
     _applyStandalonePlayerControls();
   }
@@ -72,11 +94,27 @@ class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
     _applyStandalonePlayerControls();
   }
 
+  _StandalonePlayerControls? get _currentStandaloneControls {
+    if (_item.isNotEmpty) {
+      return _standalonePlayers[_mediaOwners[_item.last.id]];
+    }
+    return _standalonePlayers.values.lastOrNull;
+  }
+
+  bool isCurrentStandalonePlayer(String ownerId) {
+    final currentOwner = _item.isNotEmpty
+        ? _mediaOwners[_item.last.id]
+        : _standalonePlayers.keys.lastOrNull;
+    return currentOwner == ownerId && _standalonePlayers.containsKey(ownerId);
+  }
+
   void _applyStandalonePlayerControls() {
-    final controls = _standalonePlayers.values.lastOrNull;
+    final controls = _currentStandaloneControls;
     onPlay = controls?.onPlay;
     onPause = controls?.onPause;
     onSeek = controls?.onSeek;
+    onSkipToNext = controls?.onSkipToNext;
+    onSkipToPrevious = controls?.onSkipToPrevious;
   }
 
   @override
@@ -84,32 +122,61 @@ class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
     return onPlay?.call() ??
         PlPlayerController.playIfExists() ??
         Future.syncValue(null);
-    // player.play();
   }
 
   @override
   Future<void> pause() {
-    return onPause?.call() ?? PlPlayerController.pauseIfExists();
-    // player.pause();
+    return onPause?.call() ??
+        PlPlayerController.pauseIfExists() ??
+        Future.syncValue(null);
+  }
+
+  CommonIntroController? _findIntroController() {
+    final playOwner = PlPlayerController.playOwner;
+    if (playOwner == null || !PlPlayerController.instanceExists()) return null;
+    final tag = playOwner.tag;
+    if (_item.isNotEmpty && _mediaOwners[_item.last.id] != tag) return null;
+    // Retained mini-player sessions have no page owner. Never find a stale page
+    // or reinterpret a next/previous media key as a ten-second seek.
+    final controller = switch (playOwner.type) {
+      UgcIntroController when Get.isRegistered<UgcIntroController>(tag: tag) =>
+        Get.find<UgcIntroController>(tag: tag),
+      PgcIntroController when Get.isRegistered<PgcIntroController>(tag: tag) =>
+        Get.find<PgcIntroController>(tag: tag),
+      LocalIntroController
+          when Get.isRegistered<LocalIntroController>(tag: tag) =>
+        Get.find<LocalIntroController>(tag: tag),
+      _ => null,
+    };
+    return controller?.isClosed == false ? controller : null;
+  }
+
+  @override
+  Future<void> skipToNext() {
+    if (_currentStandaloneControls case final controls?) {
+      return Future.syncValue(controls.onSkipToNext?.call());
+    }
+    return Future.syncValue(
+      (onSkipToNext ?? _findIntroController()?.nextPlay)?.call(),
+    );
+  }
+
+  @override
+  Future<void> skipToPrevious() {
+    if (_currentStandaloneControls case final controls?) {
+      return Future.syncValue(controls.onSkipToPrevious?.call());
+    }
+    return Future.syncValue(
+      (onSkipToPrevious ?? _findIntroController()?.prevPlay)?.call(),
+    );
   }
 
   @override
   Future<void> seek(Duration position) {
-    playbackState.add(
-      playbackState.value.copyWith(
-        updatePosition: position,
-      ),
-    );
-    return (onSeek?.call(position) ??
-        PlPlayerController.seekToIfExists(position, isSeek: false));
-    // await player.seekTo(position);
+    return onSeek?.call(position) ??
+        PlPlayerController.seekToIfExists(position, isSeek: false) ??
+        Future.syncValue(null);
   }
-
-  @override
-  Future<void> skipToNext() => fastForward();
-
-  @override
-  Future<void> skipToPrevious() => rewind();
 
   void setMediaItem(MediaItem newMediaItem) {
     if (!enableBackgroundPlay) return;
@@ -122,54 +189,96 @@ class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
     if (!mediaItem.isClosed) mediaItem.add(newMediaItem);
   }
 
-  void setPlaybackState(PlayerStatus status, bool isBuffering, bool isLive) {
+  Duration? _lastPos;
+  _StatusConfig? _lastConfig;
+  void onUpdateState(
+    PlayerStatus status,
+    bool isBuffering,
+    bool isLive, {
+    required Duration position,
+    required double speed,
+    String? debugLabel,
+  }) {
     if (!enableBackgroundPlay || _item.isEmpty || !_hasPlaybackOwner) {
       return;
     }
 
-    final AudioProcessingState processingState;
-    if (status.isCompleted) {
-      processingState = AudioProcessingState.completed;
-    } else if (isBuffering) {
-      processingState = AudioProcessingState.buffering;
-    } else {
-      processingState = AudioProcessingState.ready;
+    if (_currentStandaloneControls != null && debugLabel == 'onVideoPaused') {
+      return;
     }
 
-    final playing = status.isPlaying || isBuffering;
+    final newConfig = (status, isBuffering, isLive, speed);
+    // Keep sub-second seeks visible rather than deduplicating by whole seconds.
+    if (_lastConfig == newConfig &&
+        _lastPos == position &&
+        position != Duration.zero) {
+      return;
+    }
+    _lastPos = position;
+    _lastConfig = newConfig;
+
+    final AudioProcessingState processingState;
+    final bool playing;
+    switch (status) {
+      case .completed:
+        playing = false;
+        processingState = .completed;
+      case .playing:
+        playing = true;
+        processingState = isBuffering ? .buffering : .ready;
+      case .paused:
+        playing = isBuffering;
+        processingState = isBuffering ? .buffering : .ready;
+    }
+    _updateState(
+      processingState,
+      playing,
+      isLive,
+      position: position,
+      speed: speed,
+    );
+  }
+
+  void _updateState(
+    AudioProcessingState state,
+    bool playing,
+    bool isLive, {
+    required Duration position,
+    required double speed,
+  }) {
     playbackState.add(
       playbackState.value.copyWith(
-        processingState: isBuffering
-            ? AudioProcessingState.buffering
-            : processingState,
+        processingState: state,
+        updatePosition: position,
+        speed: speed,
         controls: [
           if (!isLive)
             const MediaControl(
               androidIcon: 'drawable/ic_player_rewind_10s',
               label: 'Rewind',
-              action: MediaAction.rewind,
+              action: .rewind,
             ),
           if (playing)
             const MediaControl(
               androidIcon: 'drawable/ic_player_pause',
               label: 'Pause',
-              action: MediaAction.pause,
+              action: .pause,
             )
           else
             const MediaControl(
               androidIcon: 'drawable/ic_player_play',
               label: 'Play',
-              action: MediaAction.play,
+              action: .play,
             ),
           if (!isLive)
             const MediaControl(
               androidIcon: 'drawable/ic_player_fast_forward_10s',
               label: 'Fast Forward',
-              action: MediaAction.fastForward,
+              action: .fastForward,
             ),
         ],
         playing: playing,
-        systemActions: const {MediaAction.seek},
+        systemActions: const {.seek},
       ),
     );
     if (Platform.isAndroid &&
@@ -181,13 +290,6 @@ class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
         playing,
       );
     }
-  }
-
-  void onStatusChange(PlayerStatus status, bool isBuffering, isLive) {
-    if (!enableBackgroundPlay) return;
-
-    if (_item.isEmpty) return;
-    setPlaybackState(status, isBuffering, isLive);
   }
 
   void onVideoDetailChange(
@@ -283,46 +385,58 @@ class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
       default:
         return;
     }
-    // if (kDebugMode) debugPrint("exist: ${PlPlayerController.instanceExists()}");
+    _mediaOwners[id] = herotag;
+    _item.removeWhere((item) => item.id == id);
     _item.add(mediaItem);
+    _lastPos = null;
+    _lastConfig = null;
+    _applyStandalonePlayerControls();
     setMediaItem(mediaItem);
   }
 
   void onVideoDetailDispose(String herotag) {
     if (!enableBackgroundPlay) return;
 
+    final wasCurrentOwner =
+        _item.isNotEmpty && _mediaOwners[_item.last.id] == herotag;
     if (_item.isNotEmpty) {
-      _item.removeWhere((item) => item.id.endsWith(herotag));
+      _item.removeWhere((item) => _mediaOwners[item.id] == herotag);
     }
+    _mediaOwners.removeWhere((_, owner) => owner == herotag);
+    _applyStandalonePlayerControls();
+    if (!wasCurrentOwner) return;
+    _lastPos = null;
+    _lastConfig = null;
     if (_item.isNotEmpty) {
+      setMediaItem(_item.last);
       playbackState.add(
         playbackState.value.copyWith(processingState: .ready, playing: false),
       );
-      setMediaItem(_item.last);
-      stop();
     }
+  }
+
+  void clearIfNeeded() {
+    if (!enableBackgroundPlay) return;
+    if (_item.isEmpty) clear();
   }
 
   void clear() {
     if (!enableBackgroundPlay) return;
     mediaItem.add(null);
     _item.clear();
+    _mediaOwners.clear();
+    _applyStandalonePlayerControls();
+    _lastPos = null;
+    _lastConfig = null;
     /**
      * if (playbackState.processingState == AudioProcessingState.idle &&
             previousState?.processingState != AudioProcessingState.idle) {
           await AudioService._stop();
         }
      */
-    playbackState
-      ..add(PlaybackState(processingState: .completed, playing: false))
-      ..add(PlaybackState(processingState: .idle, playing: false));
-  }
-
-  void onPositionChange(Duration position) {
-    if (!enableBackgroundPlay || _item.isEmpty || !_hasPlaybackOwner) {
-      return;
+    if (playbackState.value.processingState == .idle) {
+      playbackState.add(PlaybackState(processingState: .completed));
     }
-
-    playbackState.add(playbackState.value.copyWith(updatePosition: position));
+    playbackState.add(PlaybackState(processingState: .idle));
   }
 }

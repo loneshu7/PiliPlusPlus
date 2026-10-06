@@ -8,7 +8,7 @@ import 'package:PiliPlus/plugin/pl_player/widgets/player_surface.dart';
 import 'package:PiliPlus/services/in_app_mini_player_service.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:PiliPlus/plugin/pl_player/widgets/player_status_builder.dart';
 
 class InAppMiniPlayerHost extends StatefulWidget {
   const InAppMiniPlayerHost({required this.child, super.key});
@@ -371,55 +371,60 @@ class _MiniPlayerCard extends StatelessWidget {
                         ),
                       ),
                       Center(
-                        child: Obx(() {
-                          final isPlaying = player.playerStatus.value.isPlaying;
-                          return Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (!player.isLive)
+                        child: PlayerStatusBuilder(
+                          currentStatus: () => player.playerStatus,
+                          addListener: player.addStatusLister,
+                          removeListener: player.removeStatusLister,
+                          builder: (context, status) {
+                            final isPlaying = status.isPlaying;
+                            return Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (!player.isLive)
+                                  _MiniButton(
+                                    tooltip: '后退 10 秒',
+                                    icon: Icons.replay_10_rounded,
+                                    onPressed: () {
+                                      player.seekTo(
+                                        player.currentPosition -
+                                            const Duration(seconds: 10),
+                                        isSeek: false,
+                                      );
+                                    },
+                                    onInteraction: onControlsInteraction,
+                                  ),
                                 _MiniButton(
-                                  tooltip: '后退 10 秒',
-                                  icon: Icons.replay_10_rounded,
-                                  onPressed: () {
-                                    player.seekTo(
-                                      player.currentPosition -
-                                          const Duration(seconds: 10),
-                                      isSeek: false,
-                                    );
-                                  },
+                                  tooltip: isPlaying ? '暂停' : '播放',
+                                  icon: isPlaying
+                                      ? Icons.pause_rounded
+                                      : Icons.play_arrow_rounded,
+                                  iconSize: 30,
+                                  onPressed: isPlaying
+                                      ? player.pause
+                                      : player.play,
                                   onInteraction: onControlsInteraction,
                                 ),
-                              _MiniButton(
-                                tooltip: isPlaying ? '暂停' : '播放',
-                                icon: isPlaying
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                                iconSize: 30,
-                                onPressed: isPlaying
-                                    ? player.pause
-                                    : player.play,
-                                onInteraction: onControlsInteraction,
-                              ),
-                              if (!player.isLive)
-                                _MiniButton(
-                                  tooltip: '前进 10 秒',
-                                  icon: Icons.forward_10_rounded,
-                                  onPressed: () {
-                                    final target =
-                                        player.currentPosition +
-                                        const Duration(seconds: 10);
-                                    player.seekTo(
-                                      target > player.currentDuration
-                                          ? player.currentDuration
-                                          : target,
-                                      isSeek: false,
-                                    );
-                                  },
-                                  onInteraction: onControlsInteraction,
-                                ),
-                            ],
-                          );
-                        }),
+                                if (!player.isLive)
+                                  _MiniButton(
+                                    tooltip: '前进 10 秒',
+                                    icon: Icons.forward_10_rounded,
+                                    onPressed: () {
+                                      final target =
+                                          player.currentPosition +
+                                          const Duration(seconds: 10);
+                                      player.seekTo(
+                                        target > player.currentDuration
+                                            ? player.currentDuration
+                                            : target,
+                                        isSeek: false,
+                                      );
+                                    },
+                                    onInteraction: onControlsInteraction,
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
                       ),
                       if (session.title case final title? when title.isNotEmpty)
                         Positioned(

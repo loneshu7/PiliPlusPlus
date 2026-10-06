@@ -14,6 +14,8 @@ class MpvPlayerView {
 
   final VideoController _controller;
 
+  int? get textureId => _controller.id.value;
+
   static Future<MpvPlayerView> create(
     Player player, {
     required bool enableHardwareAcceleration,

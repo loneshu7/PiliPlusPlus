@@ -518,11 +518,8 @@ class _PostPanelState extends State<PostPanel>
             onPressed: () async {
               if (plPlayerController.playerReady) {
                 final start = (item.segment.first * 1000).round();
-                Future<void> seekToEnd() => plPlayerController.seekTo(
-                  Duration(
-                    milliseconds: (item.segment.second * 1000).round(),
-                  ),
-                  isSeek: false,
+                Future<void> seekToEnd() => plPlayerController.seek(
+                  Duration(milliseconds: (item.segment.second * 1000).round()),
                 );
                 if (start <= 0) {
                   await seekToEnd();
@@ -532,10 +529,10 @@ class _PostPanelState extends State<PostPanel>
                   return;
                 }
                 final seek = max(0, start - 2000);
-                await plPlayerController.seekTo(
-                  Duration(milliseconds: seek),
-                  isSeek: false,
-                );
+                await plPlayerController.seek(Duration(milliseconds: seek));
+                if (!plPlayerController.isPlaying) {
+                  await plPlayerController.play();
+                }
                 if (start > seek) {
                   final duration = Duration(milliseconds: start);
                   late final ValueChanged<Duration> listener;
