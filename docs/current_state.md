@@ -6,6 +6,80 @@
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
 
+## 上游同步：已合回本地，待真机回归（2026-10-06）
+
+- 本批属于上游同步。用户授权“拉取到我们的项目，不要影响我们的修改”。全程在当前目录
+  `D:/PiliPlus` 工作，未创建或使用 worktree。起点为 `release/2.1.10@abba4ef`，共同基线
+  `a85ae21`，同步前本地独有 172、上游未合入 70。创建临时分支
+  `sync/upstream-20261006-4ed5968`，以 `3acb29c` 保存前次查询的文档修改；原有未跟踪 `nul` 保留。
+- 普通合并上游 `4ed5968f37af8b4aa7e0f13178cb8d8c2f86defc`（Release 2.1.6），合并提交
+  `74a0ef82e81064a1f0290c45cda59b43e635ddaf`；分析清理提交
+  `4305b0c9617f0b5edf86f9fdcc444a431cc12a3a`。自动化和构建完成后已以 `--ff-only` 合回
+  `release/2.1.10`。合回代码时相对上游领先 175、落后 0，相对本地 origin 跟踪引用领先 73。
+  本节另作文档提交；未 fetch origin，不将跟踪引用视为远程实时状态。未 push、创建 tag/Release 或交付。
+- 人工处理 12 个文本冲突文件：README、独立音频控制器、直播头部、播放设置、BlockMixin、
+  视频控制器/空降编辑/视频头部、公共播放器控制器/视图、audio_handler 和 pubspec。
+  普通搜索、评论、屏蔽、动态、收藏、直播、下载、PGC/UGC 新 UI 及依赖接受上游；
+  保留 `pili++`、`com.shudo.plusplus` 和 `2.1.10+2026091901`，未改签名或发布基线。
+- 关键适配：
+  - 公共状态采用上游普通 `PlayerStatus`，用 `_setPlayerStatus` 和既有 listener registry 通知；
+    新 `onUpdateState` 用公共当前进度和实际后端速度，完整覆盖 Media3 缓冲、播放、完成、重试和最终失败，
+    暂停/完成沿用 500ms 延迟，最终失败立即回传。公共 `seek` 分派 Media3/mpv，仅 mpv 等待 buffer 事件。
+  - 保留独立音频 generation/tracker、焦点、完成业务和后端中立控制；standalone 控件注册扩展
+    上一首/下一首回调，按媒体 owner 分发、注销后恢复另一 owner 的五项控制，不全局清空其他会话。
+    通知 UI 仍采用上游前后十秒/播放暂停；上一首/下一首是媒体会话回调，不改成十秒 seek。
+  - 小窗保留同播放器/Texture、retain/release 和页面 owns guard；保活期绑定播放器本身的播放回调，
+    清除已释放页面的 PlayOwner，恢复页重新绑定。无有效页面队列时不误操作旧页的上一首/下一首。
+    新 `PlayerStatusBuilder` 替换小窗仅依赖已被移除 Rx 的 Obx，补两例刷新/换源解绑/销毁测试。
+  - 视频恢复的文件、durl、DASH 三条 `initializePlayer:false` 路径保留，避免重载会话；
+    PGC 切季后的小窗快照读取当前 `pgcItem/seasonId`，换集同步详情的 seasonId，避免恢复旧季。
+    离线空降与下载合集重构接入公共 BlockMixin 监听；截图融合 Enter 保存和一次性图像释放，保留公共结果/错误报告。
+  - 接纳 Android PiP 显式媒体接收器和进入后参数更新，以及 Activity 销毁不再强杀音频服务；
+    Media3 注册、PiP 回调/JNI、本地下拉布局及控制层挂接仍保留。iOS/桌面代码随上游保留，不扩大支持平台。
+- 受保护路径逐项核对与 `abba4ef` 无差异：Media3 Kotlin 桥接/缓冲策略、Dart Exo adapter、
+  下拉 `page_pull_transition.dart`、小窗服务、音频焦点服务、Android applicationId/Manifest、
+  Android-only CI 和 `tool/release_baseline.json`。AndroidHelper/MediaHelper/MainActivity 有上述上游改动，
+  不能概括为“Android 原生全部未改”。新增冲突面仅后端适配、PGC 恢复 hook 和独立状态 builder；不建立普通业务分叉。
+- 工具链：独立 Flutter 3.47.6，官方 tag commit `5fc346839b5d0eef006ed8404392afb4dfae428d`，
+  Dart 3.13.5、JDK 17.0.19+10；SDK `D:/CodexToolchains/PiliPlus/flutter-sdk/flutter-3.47.6`，
+  Pub 缓存 `D:/CodexToolchains/PiliPlus/pub-cache-upstream-4ed5968-flutter-3.47.6`。
+  25 个 Android SDK 补丁及 material_ui 1.5.0 的 9 补丁均正向检查/应用/反向检查通过；
+  固定上游补丁源 blob、清单/顺序校验通过，旧 SDK HEAD/status/修改文件哈希不变。
+  未运行含全局身份修改和缓存删除的仓库 patch.ps1；环境脚本只修改当前进程。
+- 下载/首轮失败如实记录：Android precache 首轮 600s 超时，后续下载长度/官方 MD5 核对及
+  precache 重试 exit 0；首次 Pub Git clone 遇 schannel TLS 握手失败，进程内采用 OpenSSL 后正常解析，
+  未禁用 TLS 校验；缓存复制曾超时，仅保留独立部分副本并让 Pub 校验补齐。
+  首次 enforce 提示两个旧传递依赖，随后普通 pub get 和 offline enforce 均成功且锁文件无额外变化。
+  首轮 analyze 的未使用 import warning 和新增 lambda info 已在 `4305b0c` 清理。
+- 基础门禁：新 SDK 格式检查 1360 文件、0 changed；`dart analyze` exit 0，0 error/warning、
+  34 条既有 info；完整 Flutter 测试 77/77；Android `:app:testDebugUnitTest` 6 套件 32/32，
+  0 失败/错误/跳过；三 ABI Release 构建全部成功。`git diff --check` 通过；暂存 diff 检查中
+  两个上游 patch 文件的六行单空格是合法 unified-diff 空白上下文，原文件与上游相同，按补丁路径关闭
+  blank-at-eol 后通过，不更改源码空白规则。LSP 未有可用 Dart server，本批静态门禁使用 dart analyze；
+  如需 LSP，安装服务或配置 pi-lsp.json 的有效 Dart 命令。Gradle 仍有既有 compileSdk/SDK XML/KGP/弃用提示。
+- 独立最终源码审查无本批新增 Critical/Important 阻断；新增 widget 测试不覆盖全部媒体通知/双 owner/
+  PGC 路由集成，后续仍需专项事件 mock 与真机回归。adb 无设备，未安装或执行任何真机验收。
+- 验证 APK（非交付）准确源码 `4305b0c`，构建时 tracked 工作区干净，构建时间
+  2026-10-06 12:47:27–12:55:16 +08:00，嵌入 commit 三 ABI 均核实；包名 `com.shudo.plusplus`、
+  名称 `pili++`、版本 `2.1.10+2026091901`、各单 ABI 及签名均核对通过。
+  `tool/verify_release.ps1 -AllowAlreadyDelivered` 三包通过（校验进程缺少 Get-FileHash 时用等价 .NET SHA-256）；
+  证书 SHA-256 均为 `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C`。
+  不作为正式升级交付，不更新 baseline；清单见
+  `D:/PiliPlus/build/sync-4ed5968-validation-4305b0c/artifacts.json`。
+
+| ABI | 验证 APK 完整路径 | APK SHA-256 |
+| --- | --- | --- |
+| armeabi-v7a | `D:/PiliPlus/build/sync-4ed5968-validation-4305b0c/pili++-2.1.10-2026091901-armeabi-v7a-release-upstream-4ed5968-validation.apk` | `BE975B11BC009E935CEB94A98158E7F377BC82E3A86555944C5BEF51BC3AE91D` |
+| arm64-v8a | `D:/PiliPlus/build/sync-4ed5968-validation-4305b0c/pili++-2.1.10-2026091901-arm64-v8a-release-upstream-4ed5968-validation.apk` | `14ED47ABE1134E59DA1DC55A57919444FBECF975D0657C15A5B0A8CFD7AE2687` |
+| x86_64 | `D:/PiliPlus/build/sync-4ed5968-validation-4305b0c/pili++-2.1.10-2026091901-x86_64-release-upstream-4ed5968-validation.apk` | `B947B2E5166030CA85AE6CCED29E1742B9A5A0156F4D96E856116B71029B68D3` |
+
+- 日志、补丁证据和隔离环境入口位于 `D:/PiliPlus/build/sync-4ed5968-logs`。
+- 待真机：Media3 窗口/全屏/小窗控制层和通知，倍速/seek/缓冲/完成/错误重试，PGC 切季后恢复、
+  UGC 分P与离线合集/空降、上下媒体键与十秒按钮区分、音频焦点/duck/耳机蓝牙、下拉/上滑及既有手势、
+  小窗同 Texture 动画和新媒体释放、PiP 往返/关闭、Activity/前后台生命周期；普通搜索/屏蔽/动态等新 UI 也待验证。
+  已识别但非本批引入的债务仍在：互动/字幕 metadata 恢复未闭环，离线恢复依赖 DownloadController 路由，
+  同会话 retry await 后缺少换源 generation 校验。自动化不代表无黑帧、动画/设备交互无回归，也不代表 Media3 已完整替代 mpv。
+
 ## 上游提交查询（2026-10-06）
 
 - 本批仅核对上游信息，已执行 `git fetch upstream`，未执行 merge/rebase、提交或推送。
