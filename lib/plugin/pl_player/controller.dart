@@ -65,7 +65,7 @@ import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/services.dart'
-    show DeviceOrientation, HapticFeedback, KeyDownEvent, LogicalKeyboardKey;
+    show DeviceOrientation, HapticFeedback, KeyDownEvent;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:get/get.dart';
@@ -988,9 +988,9 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
 
     if (Platform.isAndroid && autoPiP) {
       if (DeviceUtils.sdkInt < 31) {
-        AndroidHelper$ToDart.onUserLeaveHint = Runnable.implement(
-          $Runnable(run: _onUserLeaveHint),
-        );
+        final func = Runnable.implement($Runnable(run: _onUserLeaveHint));
+        AndroidHelper$ToDart.onUserLeaveHint = func;
+        func.release();
       } else {
         _isAutoEnterPip = true;
       }
@@ -1296,8 +1296,15 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     _mpvPlayerView = await MpvPlayerView.create(
       player,
       enableHardwareAcceleration: hwdec != null,
+      // Size the Android surface before rendering a paused first frame.
+      androidAttachSurfaceAfterVideoParameters: true,
       hwdec: hwdec,
     );
+
+    if (Platform.isAndroid) {
+      // Avoid sizing the surface using mpv's idle window between media loads.
+      player.setProperty('force-window', 'no');
+    }
 
     player.setMediaHeader(userAgent: BrowserUa.pc, referer: HttpString.baseUrl);
 
@@ -2500,7 +2507,6 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       _clearPreview();
     }
     if (Platform.isAndroid) {
-      AndroidHelper$ToDart.onUserLeaveHint?.release();
       AndroidHelper$ToDart.onUserLeaveHint = null;
     } else if (Platform.isIOS) {
       IOSPipHelper.dispose();
@@ -2644,7 +2650,19 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     }
   }
 
+  int _screenshotState = 0;
+
   Future<void> takeScreenshot() async {
+    if (_screenshotState > 0) return;
+    _screenshotState = 1;
+    try {
+      await _captureAndPreviewScreenshot();
+    } finally {
+      _screenshotState = 0;
+    }
+  }
+
+  Future<void> _captureAndPreviewScreenshot() async {
     SmartDialog.showToast('截图中');
     final result = await captureFrame();
     final ui.Image image;
@@ -2676,7 +2694,6 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     final time = DurationUtils.formatDuration(
       positionInMilliseconds / 1000,
     ).replaceAll(':', '-');
-    var saved = false;
     var imageDisposed = false;
     void disposeImage() {
       if (imageDisposed) return;
@@ -2685,10 +2702,10 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     }
 
     Future<void> save() async {
-      if (saved) return;
-      saved = true;
+      if (_screenshotState > 1) return;
+      _screenshotState = 2;
       try {
-        Get.back(result: false);
+        Get.back();
         // Closing the preview must not dispose the image before encoding.
         final bytes = await image
             .toByteData(format: .png)
@@ -2711,18 +2728,20 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
 
     SmartDialog.showToast('点击弹窗或按 Enter 保存截图');
     try {
-      await showDialog<bool>(
+      await showDialog(
         context: context,
+        requestFocus: true,
         builder: (context) => Focus(
           autofocus: true,
           onKeyEvent: (node, event) {
-            if (event is KeyDownEvent &&
-                (event.logicalKey == LogicalKeyboardKey.enter ||
-                    event.logicalKey == LogicalKeyboardKey.numpadEnter)) {
-              save();
-              return KeyEventResult.handled;
+            if (event is KeyDownEvent) {
+              final key = event.logicalKey;
+              if (key == .keyS || key == .enter || key == .numpadEnter) {
+                save();
+                return .handled;
+              }
             }
-            return KeyEventResult.ignored;
+            return .ignored;
           },
           child: GestureDetector(
             onTap: save,
@@ -2754,7 +2773,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       );
     } finally {
       // A save owns disposal; cancellation or a failed dialog owns it here.
-      if (!saved) disposeImage();
+      if (_screenshotState < 2) disposeImage();
     }
   }
 

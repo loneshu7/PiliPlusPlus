@@ -19,13 +19,15 @@ class MpvPlayerView {
   static Future<MpvPlayerView> create(
     Player player, {
     required bool enableHardwareAcceleration,
+    required bool androidAttachSurfaceAfterVideoParameters,
     required String? hwdec,
   }) async {
     final controller = await VideoController.create(
       player,
       configuration: VideoControllerConfiguration(
         enableHardwareAcceleration: enableHardwareAcceleration,
-        androidAttachSurfaceAfterVideoParameters: false,
+        androidAttachSurfaceAfterVideoParameters:
+            androidAttachSurfaceAfterVideoParameters,
         hwdec: hwdec,
       ),
     );
