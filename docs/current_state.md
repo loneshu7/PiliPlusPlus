@@ -30,6 +30,43 @@
   （需同步更新 3.47.6 SDK 内该补丁）。
 - 本节仅为同步起点快照；批 1 的冲突处理、门禁、构建与真机状态在批结束时更新。
 
+### 批次 1 结果（2026-11-02）
+
+- 批 1（合并提交 `112c4a0`，目标 `4d1b386`，17 个提交）3 个文本冲突已人工解决并启用 rerere
+  （3 条解法已入 `.git/rr-cache`）：`pl_player/controller.dart` 保留后端中立 `captureFrame`/
+  `PlayerFeatureResult`/一次性释放，采用上游 `_screenshotState` 防重入（包 `try/finally` 防
+  早退锁死）、`requestFocus`、`S` 键与 `.enter` 简写，mpv 创建经 `MpvPlayerView.create` 透传
+  `androidAttachSurfaceAfterVideoParameters: true`；`audio_handler.dart` 保留独立音频 owner
+  分发、两条路径改上游 `Future.sync` 形式；`play_settings.dart` 保留应用内小窗开关、PiP
+  条件随上游。9 个自动合并的重叠文件逐项核对，本地 hook 未被覆盖。
+- 工具链：3.47.6 SDK 内 `scroll_position.patch` 已更新（反向→应用→正向→反向校验）；material_ui
+  升 1.6.0 后重打 9 个 Android 补丁 9/9（`material-patches-b1.json`）；批 1 复用 3.47.6 Pub
+  缓存（仅追加新包）。确认 Release 一直由 Flutter 插件默认启用 R8（`mapping/release/` 存在），
+  上游 proguard 改动生效且本批 R8 无缺类告警、无 `missing_rules.txt`。
+- 门禁（源码 `112c4a0`，tracked 工作区干净）：格式 1364 文件 0 改动；`dart analyze`
+  0 error / 0 warning、34 条既有 info；Android `:app:testDebugUnitTest` 6 套件 32/32，
+  0 失败/错误/跳过；`git diff --check` 通过。**`flutter test` 阻塞**：上游 `tray_manager` 0.8
+  → `nativeapi` → `cnativeapi` 的 native-assets 钩子在 windows_x64 宿主需要 MSVC，本机无
+  Visual Studio；`FLUTTER_NATIVE_ASSETS=false` 被工具直接拒绝；Android 目标经 NDK 编译正常。
+  待用户决定是否安装 VS 2022 Build Tools 后补跑；未跑前批次 1 不标完成。
+- Release 验证包（非交付，源码 `112c4a0`，构建 2026-11-02 20:55:31–21:11:01 +08:00，
+  与 CI 同参数 `--split-per-abi --dart-define-from-file=pili_release.json`）：版本
+  `2.1.10+2026091901`、嵌入 hash `112c4a0`；三 ABI `verify_release.ps1` 严格模式（未用
+  `-AllowAlreadyDelivered`）全部通过，applicationId `com.shudo.plusplus`、`pili++`、证书
+  `775803BD…C44C5C`。首轮校验因 `JAVA_TOOL_OPTIONS` 下 apksigner 的 stderr 提示在
+  `ErrorActionPreference=Stop` 中止，unset 后重跑通过（非 APK 问题）。native 库含
+  libapp / libcnativeapi / libdartjni / libflutter / libmpv 等。清单
+  `build/sync-3e2ef60-validation-b1-112c4a0/artifacts.json`；日志 `build/sync-3e2ef60-logs/`。
+- 批 2（至 `3e2ef60`，119 个提交）准备：隔离 Flutter 3.47.9 SDK 已建（`c197ca51`、
+  Dart 3.13.7、Android precache 完成、独立 Pub 缓存）；预演 10 文件 18 块冲突待处理。
+  真机回归全部待执行（含本批 `force-window=no`、截图防重入、`Future.sync` 语义）。
+
+| ABI | 验证 APK 完整路径 | APK SHA-256 |
+| --- | --- | --- |
+| armeabi-v7a | `D:/PiliPlus/build/sync-3e2ef60-validation-b1-112c4a0/pili++-2.1.10-2026091901-armeabi-v7a-release-upstream-4d1b386-validation.apk` | `6A1C4F85BC06F6F2817F32A557976B20B457BEBA8F972FAAE9FCCCF8788E953A` |
+| arm64-v8a | `D:/PiliPlus/build/sync-3e2ef60-validation-b1-112c4a0/pili++-2.1.10-2026091901-arm64-v8a-release-upstream-4d1b386-validation.apk` | `E8A7CD7F00612970F24A28AD60F37342183E5AFCA2CA268A7F948D00CCD9B4E9` |
+| x86_64 | `D:/PiliPlus/build/sync-3e2ef60-validation-b1-112c4a0/pili++-2.1.10-2026091901-x86_64-release-upstream-4d1b386-validation.apk` | `A109A3A7261FE21602633E05F132D5E1EFB6B6FF9E4CC5696C29A94C75BED969` |
+
 ## GitHub 同步（2026-10-06）
 
 - 用户在上游同步与验证完成后明确要求“提交到github”。已先 `git fetch origin`，确认
