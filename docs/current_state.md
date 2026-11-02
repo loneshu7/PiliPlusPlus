@@ -1,10 +1,34 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-10-06 +08:00
+> 最后核对：2026-11-02 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
+
+## 上游同步开始（2026-11-02）
+
+- 用户核对上游新增提交后要求开始同步。本批属于上游同步。起点 `release/2.1.10@118e05f`，
+  工作区仅原有未跟踪 `nul`；创建同步分支 `sync/upstream-20261102-3e2ef60`，最终目标
+  `upstream/main@3e2ef60`（2026-11-02），共同基线 `4ed5968`（Release 2.1.6）；上游未合入
+  136 个提交（308 文件 +13581/−8183），本地独有 177 个。已启用仓库级 `rerere` 辅助复用，
+  结果仍需人工审查。
+- 分批：批 1 合入 `4d1b386`（17 个提交：Release 2.1.6 之后至 `flutter 3.47.7` 之前，
+  含 `e958c09 tweaks (#3208)` 的 Android 原生/proguard/播放器改动），沿用已装 Flutter
+  3.47.6 隔离工具链与 Pub 缓存；批 2 合入至 `3e2ef60`（含上游 Release 2.2.0），需新建
+  Flutter 3.47.9 隔离 SDK。
+- 批 1 预演（`git merge-tree`，未改工作区）：13 个重叠文件中 3 个文本冲突——
+  `lib/pages/setting/models/play_settings.dart`（本地应用内小窗开关 vs 上游 PiP 可用性
+  条件）、`lib/services/audio_handler.dart`（本地独立音频 owner 分发 vs 上游 `Future.sync`
+  修复）、`lib/plugin/pl_player/controller.dart` 4 块（本地 `captureFrame`/Media3 截图与
+  mpv 创建参数 vs 上游截图重写与 `androidAttachSurfaceAfterVideoParameters`）。预演树
+  `d0ebb46f`；tip 整批预演 11 个冲突文件。证据在 `build/sync-3e2ef60-logs/`。
+- 上游批 1 关键语义：Release 构建 `proguardFiles` 取消注释并新增 AndroidHelper/ToDart
+  keep 规则（当前 release 未启用 minify，批内核对）；PiP 按钮按 `isPipAvailable` 收紧；
+  JNI `Runnable` 赋值后立即 release；`cached_network_image_ce` 换源、tray_manager 升 0.8、
+  `waterfall_flow` 换 `flutter_staggered_grid_view`、`scroll_position.patch` 条件调整
+  （需同步更新 3.47.6 SDK 内该补丁）。
+- 本节仅为同步起点快照；批 1 的冲突处理、门禁、构建与真机状态在批结束时更新。
 
 ## GitHub 同步（2026-10-06）
 
