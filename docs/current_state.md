@@ -1,6 +1,6 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-11-02 +08:00
+> 最后核对：2026-11-03 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
@@ -51,14 +51,14 @@
   待用户决定是否安装 VS 2022 Build Tools 后补跑；未跑前批次 1 不标完成。
 - Release 验证包（非交付，源码 `112c4a0`，构建 2026-11-02 20:55:31–21:11:01 +08:00，
   与 CI 同参数 `--split-per-abi --dart-define-from-file=pili_release.json`）：版本
-  `2.1.10+2026091901`、嵌入 hash `112c4a0`；三 ABI `verify_release.ps1` 严格模式（未用
+  `2.1.10+2026091901`、构建元数据传入 hash `112c4a0`（本批未从二进制独立提取复核）；三 ABI `verify_release.ps1` 严格模式（未用
   `-AllowAlreadyDelivered`）全部通过，applicationId `com.shudo.plusplus`、`pili++`、证书
   `775803BD…C44C5C`。首轮校验因 `JAVA_TOOL_OPTIONS` 下 apksigner 的 stderr 提示在
   `ErrorActionPreference=Stop` 中止，unset 后重跑通过（非 APK 问题）。native 库含
   libapp / libcnativeapi / libdartjni / libflutter / libmpv 等。清单
   `build/sync-3e2ef60-validation-b1-112c4a0/artifacts.json`；日志 `build/sync-3e2ef60-logs/`。
 - 批 2（至 `3e2ef60`，119 个提交）准备：隔离 Flutter 3.47.9 SDK 已建（`c197ca51`、
-  Dart 3.13.7、Android precache 完成、独立 Pub 缓存）；预演 10 文件 18 块冲突待处理。
+  Dart 3.13.7、Android precache 完成、独立 Pub 缓存）；预演 10 文件 19 块冲突待处理。
   真机回归全部待执行（含本批 `force-window=no`、截图防重入、`Future.sync` 语义）。
 
 | ABI | 验证 APK 完整路径 | APK SHA-256 |
@@ -66,6 +66,19 @@
 | armeabi-v7a | `D:/PiliPlus/build/sync-3e2ef60-validation-b1-112c4a0/pili++-2.1.10-2026091901-armeabi-v7a-release-upstream-4d1b386-validation.apk` | `6A1C4F85BC06F6F2817F32A557976B20B457BEBA8F972FAAE9FCCCF8788E953A` |
 | arm64-v8a | `D:/PiliPlus/build/sync-3e2ef60-validation-b1-112c4a0/pili++-2.1.10-2026091901-arm64-v8a-release-upstream-4d1b386-validation.apk` | `E8A7CD7F00612970F24A28AD60F37342183E5AFCA2CA268A7F948D00CCD9B4E9` |
 | x86_64 | `D:/PiliPlus/build/sync-3e2ef60-validation-b1-112c4a0/pili++-2.1.10-2026091901-x86_64-release-upstream-4d1b386-validation.apk` | `A109A3A7261FE21602633E05F132D5E1EFB6B6FF9E4CC5696C29A94C75BED969` |
+
+### MSVC 安装与后续同步（2026-11-03）
+
+- 用户回复 A，授权安装 VS 2022 Build Tools C++ 工作负载。经 winget 校验官方安装器哈希后安装
+  17.14.44（MSVC x64/x86、Windows SDK），位置 `D:/CodexToolchains/PiliPlus/vs-buildtools`；
+  安装退出码 0，`vswhere` 已可发现工具链。安装证据 `build/sync-3e2ef60-logs/vs-buildtools-installed.json`。
+- 批 1 完整 Flutter 测试在应用源码未变的 `8b69ba2` 上补跑，77/77、exit 0（19:38–19:46 +08:00）；
+  原 MSVC 门禁已解除，之前的格式/分析/JVM/三 ABI Release 结果仍适用于该源码。所有设备交互仍待真机验证。
+  日志 `b1-flutter-test-msvc.log` 和 `b1-flutter-test-msvc-summary.json`。
+- 批 2 独立 Pub 缓存已按上游 lock 预取（`--enforce-lockfile` exit 0）；material_ui 1.9.0
+  九个 Android 补丁来源 blob、正向/应用/反向校验 9/9 通过，证据 `b2/material-patches.json`。
+- 预演语义审查发现 PGC 新 `sectionIndex` 路由契约尚未进入小窗快照；正片/花絮切换后恢复会选错
+  集合，可能 `firstWhere` 抛错。批 2 需同步当前分类并清理旧参数，不能以 hook 行数相同宣称无回归。
 
 ## GitHub 同步（2026-10-06）
 
