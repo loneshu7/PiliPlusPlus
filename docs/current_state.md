@@ -95,7 +95,12 @@
   并移除无用 import；最终分析 exit 0，0 error / 0 warning、39 info。其他门禁和 Release 待运行。
 - 完整 Flutter 测试首轮 91 通过 / 2 失败：账号删除测试未提供上游新增的 buvid 字段，Hive 序列化触发
   AnonymousAccount/未初始化的全局设置。仅为该测试 fixture 显式提供设备标识，保持上游账号实现；
-  两项定向测试已通过，完整重跑待执行。格式检查 1398 文件、0 changed；静态分析结果同上。
+  两项定向测试已通过；`088f882` 完整重跑 93/93、exit 0（20:47–20:51 +08:00）。
+  格式检查 1398 文件、0 changed；静态分析 0 error / 0 warning、39 info，exit 0。
+- Android JVM 首轮因独立缓存的 native-assets 多 ABI 编译及引擎下载超过工具 30 分钟时限，被终止，
+  未计为通过；已延长至 2 小时重跑。线程/下载文件核实当前等待三 ABI Flutter 引擎依赖，文件仍增长。
+  Release runner 等待 JVM 成功后启动；本条记录时 JVM/Release 均未结束。
+  `adb devices -l` 无设备，未执行真机验收。
 - 无真机结果、无交付、无推送；三类差异的既有缺口继续保留。
 
 ## GitHub 同步（2026-10-06）
