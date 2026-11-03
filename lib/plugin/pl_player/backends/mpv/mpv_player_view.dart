@@ -10,9 +10,14 @@ import 'package:media_kit_video/media_kit_video.dart';
 /// media_kit video controller, surface and subtitle configuration stay inside
 /// the mpv boundary.
 class MpvPlayerView {
-  const MpvPlayerView._(this._controller);
+  const MpvPlayerView._(this._controller, this._player);
 
   final VideoController _controller;
+  final Player _player;
+
+  void setRotation(int degrees) {
+    _player.setProperty('video-rotate', degrees.toString());
+  }
 
   int? get textureId => _controller.id.value;
 
@@ -31,7 +36,7 @@ class MpvPlayerView {
         hwdec: hwdec,
       ),
     );
-    return MpvPlayerView._(controller);
+    return MpvPlayerView._(controller, player);
   }
 
   Widget buildSurface({

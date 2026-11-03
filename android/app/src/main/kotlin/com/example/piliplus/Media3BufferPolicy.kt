@@ -10,7 +10,7 @@ internal data class Media3BufferPolicy(
 )
 
 /**
- * Maps the shared VOD preferences onto a self-consistent Media3 load policy.
+ * Maps the shared VOD and live preferences onto a self-consistent Media3 load policy.
  *
  * Media3 evaluates the byte budget against the allocator total, which also
  * covers retained back-buffer samples, so a back buffer sharing the forward
@@ -22,16 +22,19 @@ internal data class Media3BufferPolicy(
  * resumes as soon as a small amount of media is available instead of stalling
  * at a threshold the byte budget may never let the loader reach.
  *
- * Live sessions retain Media3's defaults because their latency policy cannot be
- * inferred from the VOD buffer-duration preference.
+ * Live duration is supplied separately from VOD. A non-positive live duration
+ * has no time cap; the byte budget still bounds forward buffering.
  */
 internal fun resolveMedia3BufferPolicy(
     targetBufferBytes: Int,
     bufferDurationMs: Int,
     isLive: Boolean,
-): Media3BufferPolicy? {
-    if (isLive) return null
-    val maximumMs = bufferDurationMs.coerceAtLeast(MIN_MEDIA3_BUFFER_DURATION_MS)
+): Media3BufferPolicy {
+    val maximumMs = if (isLive && bufferDurationMs <= 0) {
+        Int.MAX_VALUE
+    } else {
+        bufferDurationMs.coerceAtLeast(MIN_MEDIA3_BUFFER_DURATION_MS)
+    }
     return Media3BufferPolicy(
         targetBufferBytes = targetBufferBytes.coerceAtLeast(MIN_MEDIA3_TARGET_BUFFER_BYTES),
         minBufferMs = maximumMs,

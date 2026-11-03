@@ -1535,16 +1535,12 @@ private data class Media3PlaybackConfiguration(
         append(", hwdec=")
         append(decoderResolution.description)
         append(", decoderFallback=true")
-            if (isLive) {
-                append(", buffer=media3-live-default")
-                return@buildString
-            }
             val policy = resolveMedia3BufferPolicy(
                 targetBufferBytes,
                 bufferDurationMs,
-                isLive = false,
-            ) ?: return@buildString
-            append(", buffer=custom-safe")
+                isLive,
+            )
+            append(if (isLive) ", buffer=live-custom-safe" else ", buffer=custom-safe")
             append(", targetBuffer=")
             append(
                 String.format(java.util.Locale.US, "%.2f", policy.targetBufferBytes / 1048576.0),
@@ -1564,7 +1560,6 @@ private data class Media3PlaybackConfiguration(
 
     fun createLoadControl(): DefaultLoadControl {
         val policy = resolveMedia3BufferPolicy(targetBufferBytes, bufferDurationMs, isLive)
-            ?: return DefaultLoadControl()
         return DefaultLoadControl.Builder()
             .setBufferDurationsMsForStreaming(
                 policy.minBufferMs,

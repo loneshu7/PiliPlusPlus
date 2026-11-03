@@ -1,7 +1,6 @@
 package com.example.piliplus
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -45,14 +44,44 @@ class Media3BufferPolicyTest {
     }
 
     @Test
-    fun liveRetainsMedia3Defaults() {
-        assertNull(
-            resolveMedia3BufferPolicy(
-                targetBufferBytes = 8 * 1024 * 1024,
-                bufferDurationMs = 16000,
-                isLive = true,
-            ),
+    fun liveHonorsItsIndependentTimeAndByteLimits() {
+        val policy = resolveMedia3BufferPolicy(
+            targetBufferBytes = 2 * 1024 * 1024,
+            bufferDurationMs = 3000,
+            isLive = true,
         )
+        assertEquals(2 * 1024 * 1024, policy.targetBufferBytes)
+        assertEquals(3000, policy.minBufferMs)
+        assertEquals(3000, policy.maxBufferMs)
+        assertEquals(0, policy.backBufferDurationMs)
+    }
+
+    @Test
+    fun liveWithoutTimeLimitStillHonorsItsByteBudget() {
+        listOf(0, -1, Int.MAX_VALUE).forEach { duration ->
+            val policy = resolveMedia3BufferPolicy(
+                targetBufferBytes = 8 * 1024 * 1024,
+                bufferDurationMs = duration,
+                isLive = true,
+            )
+            assertEquals(Int.MAX_VALUE, policy.maxBufferMs)
+            assertEquals(8 * 1024 * 1024, policy.targetBufferBytes)
+            assertEquals(1000, policy.bufferForPlaybackMs)
+            assertEquals(2000, policy.bufferForPlaybackAfterRebufferMs)
+        }
+    }
+
+    @Test
+    fun shortLiveLimitKeepsPlaybackThresholdsReachable() {
+        val policy = resolveMedia3BufferPolicy(
+            targetBufferBytes = 1,
+            bufferDurationMs = 100,
+            isLive = true,
+        )
+        assertEquals(64 * 1024, policy.targetBufferBytes)
+        assertEquals(500, policy.maxBufferMs)
+        assertEquals(500, policy.bufferForPlaybackMs)
+        assertEquals(500, policy.bufferForPlaybackAfterRebufferMs)
     }
 
     @Test
