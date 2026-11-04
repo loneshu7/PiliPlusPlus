@@ -6,6 +6,32 @@
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
 
+## 本次同步最终状态（2026-11-04）
+
+- 本批属于上游同步，原目标 `upstream/main@3e2ef60` 的 136 个提交已全部合入同步分支
+  `sync/upstream-20261102-3e2ef60`，相对该目标落后 0。合并提交 `112c4a0`、`986e864`，
+  测试 fixture 适配 `088f882`；验证源码/构建元数据为 `2bbd444`，后续提交仅更新文档。
+- 自动化门禁全部通过：格式检查 1398 文件 0 改动；分析 0 error / 0 warning、39 info；
+  完整 Flutter 测试 93/93；Android JVM 测试 6 套件 34/34、0 失败/错误/跳过；
+  三 ABI Release 构建与 `git diff --check` 通过。构建时间 2026-11-04 10:38:57–10:55:46 +08:00。
+- 三 APK 均通过 `tool/verify_release.ps1` 严格模式，应用名 `pili++`、applicationId
+  `com.shudo.plusplus`、版本 `2.1.10+2026091901`、单 ABI 正确、证书 SHA-256
+  `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C` 与基线一致。
+  三包 libapp.so 均找到完整源码 commit 字符串；R8 mapping 为本次生成。产物只用于验证，
+  未正式交付、未更新 `tool/release_baseline.json`。清单 `build/sync-3e2ef60-validation-b2-2bbd444/artifacts.json`。
+- 没有连接 Android 设备，未执行真机验收，因此不宣称三类本地功能完成验收；仍需复测 Media3
+  窗口/全屏/后台/直播缓冲、截图、音频焦点与通知，PGC 正片/花絮切换后小窗恢复、同 Texture、
+  下拉/上滑与既有手势、PiP 往返。既有互动/字幕恢复等缺口继续保留；APK 仍含 libmpv.so。
+- 保留在同步分支，发布分支 `release/2.1.10` 未推进，未 push/tag/Release。原有 `nul` 保留，
+  应用源码无未提交修改。完成真机回归后再合入发布分支；本次新增冲突面限于 PGC 分类快照、
+  独立直播缓冲映射、桌面旋转公共入口和上游设置迁移，继续通过 adapter/薄 hook 隔离。
+
+| ABI | 验证 APK 完整路径 | APK SHA-256 |
+| --- | --- | --- |
+| armeabi-v7a | `D:/PiliPlus/build/sync-3e2ef60-validation-b2-2bbd444/pili++-2.1.10-2026091901-armeabi-v7a-release-upstream-3e2ef60-validation.apk` | `8A1BF294032387750FB89A7C351510FFE693E9C7A95FECDBA632B472AE35EDD3` |
+| arm64-v8a | `D:/PiliPlus/build/sync-3e2ef60-validation-b2-2bbd444/pili++-2.1.10-2026091901-arm64-v8a-release-upstream-3e2ef60-validation.apk` | `D0B8C555B1E8DBAF699F0F8800DEFFE0910C82FB0158B2F045458EE1908ABA56` |
+| x86_64 | `D:/PiliPlus/build/sync-3e2ef60-validation-b2-2bbd444/pili++-2.1.10-2026091901-x86_64-release-upstream-3e2ef60-validation.apk` | `DECB448E7D3CDCE7A428DA25CFCBC2C30250BEBA3D73A30479EDDFF170C68FC8` |
+
 ## 上游同步开始（2026-11-02）
 
 - 用户核对上游新增提交后要求开始同步。本批属于上游同步。起点 `release/2.1.10@118e05f`，
@@ -80,7 +106,7 @@
 - 预演语义审查发现 PGC 新 `sectionIndex` 路由契约尚未进入小窗快照；正片/花絮切换后恢复会选错
   集合，可能 `firstWhere` 抛错。批 2 需同步当前分类并清理旧参数，不能以 hook 行数相同宣称无回归。
 
-### 批次 2 集成（2026-11-03，验证中）
+### 批次 2 集成（2026-11-03–04，自动化验证通过、待真机）
 
 - 普通 merge 上游 `3e2ef60`，119 个提交、10 个文本冲突文件已人工解决。接受上游新选集/设置结构、
   画质模型、普通业务、桌面代码及依赖；保留版本 `2.1.10+2026091901`、pili++ 身份、签名和 Android-only CI。
@@ -90,9 +116,9 @@
 - PGC 小窗快照同步当前 sectionIndex，回到正片时移除旧参数，防止恢复页按错误集合找当前 cid。
   截图保存通过局部 Future 防重入并等待保存结束后再释放入口锁，避免关闭预览后仍在保存时重入。
 - 上游独立直播缓冲大小/时长已映射 Media3；非正时长仅取消时间上限，字节预算仍生效。
-  Kotlin 负值/零/上限与短缓冲阈值测试随之更新；结果待运行，不视为已验收。
+  Kotlin 负值/零/上限与短缓冲阈值测试随之更新，已随 34 项 JVM 测试通过；实际直播效果待真机。
 - Flutter 3.47.9 按 lock 解析成功；静态分析初轮发现上游桌面旋转直接访问后端对象，已改公共接口，
-  并移除无用 import；最终分析 exit 0，0 error / 0 warning、39 info。其他门禁和 Release 待运行。
+  并移除无用 import；最终分析 exit 0，0 error / 0 warning、39 info。其余门禁和 Release 最终结果见顶部。
 - 完整 Flutter 测试首轮 91 通过 / 2 失败：账号删除测试未提供上游新增的 buvid 字段，Hive 序列化触发
   AnonymousAccount/未初始化的全局设置。仅为该测试 fixture 显式提供设备标识，保持上游账号实现；
   两项定向测试已通过；`088f882` 完整重跑 93/93、exit 0（20:47–20:51 +08:00）。
@@ -104,7 +130,7 @@
   证据 `b2/engine-cache-evidence.json`、`b2/engine-cache-evidence-release.json`。
 - `2bbd444`（应用源码与 `088f882` 相同）Android `:app:testDebugUnitTest` 已通过：6 套件 34/34，
   0 失败/错误/跳过，XML 时间 2026-11-04 10:38:54–55 +08:00；其中缓冲策略 7 项覆盖新增直播规则。
-  Release 三 ABI 构建已于 10:38:57 +08:00 启动，本条记录时尚未结束，不计为通过。
+  Release 三 ABI 构建于 10:38:57–10:55:46 +08:00 完成，严格身份/签名/单 ABI 校验均通过。
   `adb devices -l` 无设备，未执行真机验收。
 - 无真机结果、无交付、无推送；三类差异的既有缺口继续保留。
 

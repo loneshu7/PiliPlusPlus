@@ -91,6 +91,35 @@ Every batch requires:
 
 ## Current migration status
 
+### 2026-11-04 upstream sync: independent live buffering (device acceptance pending)
+
+The sync through upstream `3e2ef60` retains the shared Media3 controls, Texture
+ownership and event adapters while adopting the new episode and settings structure.
+The in-app mini-player route snapshot now carries the current PGC section index,
+and removes a stale section index when returning to regular episodes. Screenshot
+saving keeps its entry guard until the preview's save future has completed.
+
+Upstream's separate live buffer preferences now reach Media3: a positive live size
+is a forward byte budget in MiB; otherwise the budget follows twice the VOD size.
+A positive live duration limits the forward time target. A nonpositive duration
+removes the time cap while retaining the byte budget. Playback/rebuffer thresholds
+stay within that target and the back buffer remains disabled. This supersedes the
+historical live-default policy described below; it requires device regression for
+startup, buffering, latency and source changes before acceptance.
+
+Validation source `2bbd444` has no analyzer errors or warnings (39 info diagnostics).
+The complete Flutter suite passes 93/93 and Android JVM tests pass 34/34, including
+seven buffer-policy tests. Three signed ABI Release APKs built on November 4 pass
+identity, version, certificate and ABI checks; all contain the source commit in
+libapp.so. Paths and SHA-256 values are in `current_state.md` and
+`build/sync-3e2ef60-validation-b2-2bbd444/artifacts.json`.
+
+No Android device was connected for this sync. Window/full-screen controls, live
+buffering, screenshot saving, PGC section restoration, mini-player Texture
+continuity, portrait gestures, audio focus and PiP remain pending device regression.
+The APKs still contain libmpv.so, and this sync does not establish complete mpv
+replacement or close the existing migration gaps.
+
 ### Real-device verified
 
 - The Flutter control layer can be shown and hidden by tapping the video.
