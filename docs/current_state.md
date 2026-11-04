@@ -1,6 +1,6 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-11-03 +08:00
+> 最后核对：2026-11-04 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
@@ -97,9 +97,14 @@
   AnonymousAccount/未初始化的全局设置。仅为该测试 fixture 显式提供设备标识，保持上游账号实现；
   两项定向测试已通过；`088f882` 完整重跑 93/93、exit 0（20:47–20:51 +08:00）。
   格式检查 1398 文件、0 changed；静态分析 0 error / 0 warning、39 info，exit 0。
-- Android JVM 首轮因独立缓存的 native-assets 多 ABI 编译及引擎下载超过工具 30 分钟时限，被终止，
-  未计为通过；已延长至 2 小时重跑。线程/下载文件核实当前等待三 ABI Flutter 引擎依赖，文件仍增长。
-  Release runner 等待 JVM 成功后启动；本条记录时 JVM/Release 均未结束。
+- Android JVM 首轮超过工具 30 分钟时限；延长重跑后又随会话结束中断，均未计为通过。
+  2026-11-04 恢复验证，确认 Java 没有使用现有 HTTPS_PROXY，导致引擎依赖直连下载很慢。
+  从同一官方地址预取三 ABI Debug/Release 引擎，核对 Content-Length 与官方 MD5 后放入独立缓存，
+  并仅在验证进程给 Gradle 设置现有代理。offline 首试缺少 Gradle 元数据而失败；联网注册缓存后继续。
+  证据 `b2/engine-cache-evidence.json`、`b2/engine-cache-evidence-release.json`。
+- `2bbd444`（应用源码与 `088f882` 相同）Android `:app:testDebugUnitTest` 已通过：6 套件 34/34，
+  0 失败/错误/跳过，XML 时间 2026-11-04 10:38:54–55 +08:00；其中缓冲策略 7 项覆盖新增直播规则。
+  Release 三 ABI 构建已于 10:38:57 +08:00 启动，本条记录时尚未结束，不计为通过。
   `adb devices -l` 无设备，未执行真机验收。
 - 无真机结果、无交付、无推送；三类差异的既有缺口继续保留。
 
