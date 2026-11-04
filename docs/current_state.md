@@ -6,7 +6,17 @@
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
 
-## 本次同步最终状态（2026-11-04）
+## 本次同步分支已推送 GitHub（2026-11-04）
+
+- 用户明确要求“提交到github”。已 fetch origin，普通推送同步分支
+  `sync/upstream-20261102-3e2ef60` 至 `https://github.com/loneshu7/PiliPlusPlus.git`，
+  首次推送后用 `git ls-remote` 核实远程 commit 为 `3ffa4570acae9eaacda07be753c78db9a2cd76ed`，
+  与当时本地 HEAD 一致；本条为后续文档提交，随同一分支推送。
+- 本批仅推送代码与验证记录，无应用源码修改、无新 APK。沿用下节 93/93 Flutter、34/34 JVM
+  和三 ABI Release 结果，未增加真机验收结论。发布分支 `release/2.1.10` 和 main 未推进，
+  未创建 PR/tag/GitHub Release，原有 `nul` 保留。完成真机回归后再合入发布分支。
+
+## 本次同步最终状态（2026-11-04，推送前验证快照）
 
 - 本批属于上游同步，原目标 `upstream/main@3e2ef60` 的 136 个提交已全部合入同步分支
   `sync/upstream-20261102-3e2ef60`，相对该目标落后 0。合并提交 `112c4a0`、`986e864`，
