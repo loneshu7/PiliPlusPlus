@@ -6,7 +6,7 @@
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
 
-## 上游 2.2.1 同步与 CI 宿主依赖修复（2026-11-15，验证中）
+## 上游 2.2.1 同步与 CI 宿主依赖修复（2026-11-15，自动化验证通过，待真机与远程 CI）
 
 - 本批属于上游同步及必要 CI 支撑修复。开始于 `sync/upstream-20261102-3e2ef60@5bdf4bf`；
   工作区仅上次 arm64 安装文档和原有 `nul`。已在当前目录创建普通同步分支
@@ -39,10 +39,30 @@
 - 工具链继续 Flutter 3.47.9 / Dart 3.13.7；依赖解析成功，lock 未额外漂移。SDK 26 个补丁
   （新增 media_query，其余 25 个复核已应用）与 material_ui 1.11.0 的 9 个 Android 补丁均
   通过反向检查。证据 `build/sync-217fb54-logs/patch-evidence.json`。
-- 首轮完整 Flutter 测试 104/104；补充回归 4/4。新测试首轮夹具发生异步等待和字段重名错误，
-  修正后定向测试通过；最新静态分析 0 error / 0 warning、44 info。Android JVM 6 套件 34/34，
-  0 失败/错误/跳过，2026-11-15 13:35:25 完成。补充修正后的全套 Flutter 测试及三 ABI Release
-  待最终验证。日志在 `build/sync-217fb54-logs/`；ADB 列表为空，未执行新的真机验收。
+- 最终自动化全部通过：格式检查 1431 文件、0 changed；静态分析 0 error / 0 warning、44 info；
+  完整 Flutter 108/108（13:59:51–14:00:59 +08:00）；Android JVM 6 套件 34/34，0 失败/错误/跳过
+  （13:35:25 完成）。首轮完整测试 104/104，补充夹具曾因异步等待和字段重名失败，修正后定向
+  4/4、最终全套 108/108；失败日志仍保留。工作流 YAML 及宿主依赖顺序检查通过，Linux 实跑待远程。
+- 合并提交 `3a4f060`，独立 CI 修复 `12c2d9f`；构建准确源码为
+  `12c2d9f52b687844b49fd69e0b21b8f99deb6516`，三 ABI Release 于 13:59:51–14:13:20 +08:00
+  完成。三个 APK 均通过 `tool/verify_release.ps1` 严格模式（未用 `-AllowAlreadyDelivered`），
+  应用名 `pili++`、applicationId `com.shudo.plusplus`、版本 `2.1.10+2026091901`、单 ABI 正确、
+  证书 SHA-256 `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C` 与基线一致。
+  三包 libapp.so 内嵌完整构建 commit 已独立查验；仍含 libmpv.so，不宣称完成 mpv 移除。
+- 产物均为本地验证包，未正式交付、安装、推送或创建 PR/tag/Release；`tool/release_baseline.json`
+  未修改。清单 `build/sync-217fb54-validation-12c2d9f/artifacts.json`，日志与提交内嵌证据在
+  `build/sync-217fb54-logs/`。合并后相对上游落后 0；保留同步分支，main/发布分支未推进，原有 `nul` 保留。
+- ADB 列表为空，未执行新的真机验收。仍需 Media3 窗口/全屏/后台/直播、字幕/章节/离线恢复、
+  新 seek/跳段、小窗前十秒后退/同 Texture/PGC 恢复、下拉上滑与既有手势、音频焦点/通知及直播 PiP
+  新动作回归。既有互动、字幕恢复等缺口继续保留；源码与自动化结果不替代真机事实。
+- 本批新增上游冲突面为 mpv 音量 limiter adapter、离线字幕公共映射、直播 size mixin 监听 hook
+  及跳段就绪判断；继续通过 backend adapter 和公共 getter 隔离，不建立普通业务的独立实现。
+
+| ABI | 验证 APK 完整路径 | APK SHA-256 |
+| --- | --- | --- |
+| armeabi-v7a | `D:/PiliPlus/build/sync-217fb54-validation-12c2d9f/pili++-2.1.10-2026091901-armeabi-v7a-release-upstream-217fb54-validation.apk` | `A7B8F7A07B3F26A05BB34C4A0E2346B875BD36E0AE9AB8D48AB432539EA2EA34` |
+| arm64-v8a | `D:/PiliPlus/build/sync-217fb54-validation-12c2d9f/pili++-2.1.10-2026091901-arm64-v8a-release-upstream-217fb54-validation.apk` | `3F062ACBEB002DB9DFE871F9D419B866993D82313A705A0D867169434EF5B00D` |
+| x86_64 | `D:/PiliPlus/build/sync-217fb54-validation-12c2d9f/pili++-2.1.10-2026091901-x86_64-release-upstream-217fb54-validation.apk` | `3F54EAB08120432C9373A090525463591B24A964D13444CB87B0C210FB09DD99` |
 
 ## arm64 真机验证安装（2026-11-04）
 
