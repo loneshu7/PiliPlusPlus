@@ -6,6 +6,21 @@
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
 
+## arm64 真机安装与同步分支推送（2026-11-15）
+
+- 用户明确要求“已连 adb，安装然后提交推送”。本批属于支撑性维护，起点
+  `sync/upstream-20261115-217fb54@af87bda`，tracked 工作区干净，仅保留原有 `nul`。
+- 连接三星 SM-S9180 / Android 16，支持 arm64-v8a。以 `adb install -r` 覆盖安装下节
+  `12c2d9f` 的 arm64 Release 验证包，返回 `Success`；未卸载、清数据或改变应用身份。
+- 安装后核对 `com.shudo.plusplus`、`2.1.10+2026091901`、primaryCpuAbi=arm64-v8a，
+  lastUpdateTime=2026-11-15 14:19:13。设备 base.apk SHA-256 与本地验证包一致：
+  `3F062ACBEB002DB9DFE871F9D419B866993D82313A705A0D867169434EF5B00D`。
+  安装前后证据 `build/sync-217fb54-logs/device-package-before-install.txt`、`device-package-after-install.txt`。
+- 未启动应用或执行播放/手势/小窗/PiP 交互验收；三类本地差异仍需真机回归。沿用下节已通过的
+  108/108 Flutter、34/34 JVM 和三 ABI Release 结果，无新增源码或 APK，也未更新正式发布基线。
+- 已 fetch origin，确认目标同步分支尚不存在；本条安装记录随当前同步分支提交，接下来普通推送。
+  main、`release/2.1.10` 不推进，不创建 tag/GitHub Release。推送与 Actions 实际结果随后补记。
+
 ## 上游 2.2.1 同步与 CI 宿主依赖修复（2026-11-15，自动化验证通过，待真机与远程 CI）
 
 - 本批属于上游同步及必要 CI 支撑修复。开始于 `sync/upstream-20261102-3e2ef60@5bdf4bf`；
