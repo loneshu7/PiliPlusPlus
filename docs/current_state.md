@@ -6,6 +6,19 @@
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
 
+## arm64 真机验证安装（2026-11-04）
+
+- 用户要求把 arm64 包安装到 ADB 设备。ADB 首次列表为空，刷新 transport 后识别到三星
+  SM-S9180 / Android 16，设备支持 arm64-v8a。使用 `adb install -r` 安装下方 `2bbd444`
+  arm64 Release 验证包，返回 `Success`，保留应用数据，未卸载或清数据。
+- 安装后核对 `com.shudo.plusplus`、`2.1.10+2026091901`、primaryCpuAbi=arm64-v8a，
+  lastUpdateTime 为 2026-11-04 11:04:53；设备 base.apk SHA-256 与本地产物一致：
+  `D0B8C555B1E8DBAF699F0F8800DEFFE0910C82FB0158B2F045458EE1908ABA56`。
+  证据 `build/sync-3e2ef60-logs/b2/device-package-before-install.txt`、`device-package-after-install.txt`。
+- 本批属于支撑性维护，仅完成已有验证包安装和身份核对；没有新构建、正式发布或发布基线更新。
+  未启动应用或执行播放/手势/小窗/PiP 验收，三类差异的真机回归与既有缺口仍待验证。
+  未增加上游代码冲突面；发布分支未推进。本条文档修改尚未提交或推送。
+
 ## 本次同步分支已推送 GitHub（2026-11-04）
 
 - 用户明确要求“提交到github”。已 fetch origin，普通推送同步分支
