@@ -18,8 +18,12 @@
   安装前后证据 `build/sync-217fb54-logs/device-package-before-install.txt`、`device-package-after-install.txt`。
 - 未启动应用或执行播放/手势/小窗/PiP 交互验收；三类本地差异仍需真机回归。沿用下节已通过的
   108/108 Flutter、34/34 JVM 和三 ABI Release 结果，无新增源码或 APK，也未更新正式发布基线。
-- 已 fetch origin，确认目标同步分支尚不存在；本条安装记录随当前同步分支提交，接下来普通推送。
-  main、`release/2.1.10` 不推进，不创建 tag/GitHub Release。推送与 Actions 实际结果随后补记。
+- 安装记录提交 `650cf5b46f1c4d19c5c9781b2c1c115775bb9aaf` 已随同步分支普通推送至
+  `origin/sync/upstream-20261115-217fb54`，`git ls-remote` 核实远程 SHA 与当时本地 HEAD 一致。
+  本条推送结果为后续文档提交，随同一分支推送。main、`release/2.1.10` 未推进，无 PR/tag/Release。
+- 新 Build 已自动触发：`https://github.com/loneshu7/PiliPlusPlus/actions/runs/43684985738`，
+  CI 源码 `650cf5b`，2026-11-15 14:20:53 +08:00 查询为 `in_progress`，尚无成功/失败结论。
+  后续提交仅更新本文，不改变已安装 APK 或上述自动化覆盖的应用源码。
 
 ## 上游 2.2.1 同步与 CI 宿主依赖修复（2026-11-15，自动化验证通过，待真机与远程 CI）
 
