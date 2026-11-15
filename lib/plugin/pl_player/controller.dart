@@ -19,6 +19,7 @@ import 'package:PiliPlus/models_new/video/video_shot/data.dart';
 import 'package:PiliPlus/pages/danmaku/danmaku_model.dart';
 import 'package:PiliPlus/pages/sponsor_block/block_mixin.dart';
 import 'package:PiliPlus/plugin/pl_player/backends/mpv/mpv_player_view.dart';
+import 'package:PiliPlus/plugin/pl_player/backends/mpv/mpv_volume_limiter.dart';
 import 'package:PiliPlus/plugin/pl_player/exo_player/exo_player_controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/audio_normalization_filter.dart';
 import 'package:PiliPlus/plugin/pl_player/models/data_source.dart';
@@ -92,6 +93,9 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   bool get useExoPlayer => Platform.isAndroid && Pref.useExoPlayer;
   bool get playerReady =>
       useExoPlayer ? _exoPlayerController != null : _mpvPlayerView != null;
+  bool get isMediaReady => useExoPlayer
+      ? _exoPlayerController?.isCurrentMediaReady ?? false
+      : playerReady && dataStatus.value == DataStatus.loaded;
   ExoPlayerController? get exoPlayerController => _exoPlayerController;
 
   List<PlayerMediaTrack> tracksFor(PlayerMediaTrackType type) {
@@ -464,7 +468,6 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   late DataSource dataSource;
 
   Timer? _timer;
-  StreamSubscription? _subForSeek;
   Timer? _exoRetryTimer;
   int _exoRetryAttempt = 0;
   String? _lastFinalExoFailure;
@@ -486,6 +489,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
 
   bool isMuted = false;
   double _audioFocusGain = 1;
+  final _mpvVolumeLimiter = MpvVolumeLimiter();
 
   /// 听视频
   late final RxBool onlyPlayAudio = false.obs;
@@ -911,11 +915,8 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     return null;
   }
 
-  static Future<void>? seekToIfExists(
-    Duration position, {
-    bool isSeek = true,
-  }) {
-    return _instance?.seekTo(position, isSeek: isSeek);
+  static Future<void>? seekToIfExists(Duration position) {
+    return _instance?.seekTo(position);
   }
 
   static double? getVolumeIfExists() {
@@ -993,7 +994,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
 
   // 添加一个私有构造函数
   PlPlayerController._() {
-    if (PlatformUtils.isMobile) {
+    if (PlatformUtils.isMobile && !DeviceUtils.isChromeOS) {
       _orientationListener = NativeDeviceOrientationPlatform.instance
           .onOrientationChanged(
             checkIsAutoRotate: checkIsAutoRotate,
@@ -1297,9 +1298,6 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     final opt = {
       'video-sync': Pref.videoSync,
       if (Platform.isAndroid) 'ao': Pref.audioOutput,
-      'volume':
-          (PlatformUtils.isMobile ? Pref.playerVolume : volume.value * 100)
-              .toString(),
     };
     final autosync = Pref.autosync;
     if (autosync != '0') {
@@ -1311,6 +1309,12 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
         logLevel: kDebugMode ? .warn : .error,
         options: opt,
       ),
+    );
+
+    // Keep mpv's >100% gain limiting on the mpv backend only.
+    await _mpvVolumeLimiter.setVolumeCapped(
+      player,
+      PlatformUtils.isMobile ? Pref.playerVolume / 100 : volume.value,
     );
 
     assert(_mpvPlayerView == null);
@@ -1948,20 +1952,13 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     _exoSubscription = null;
   }
 
-  void _cancelSubForSeek() {
-    if (_subForSeek != null) {
-      _subForSeek!.cancel();
-      _subForSeek = null;
-    }
-  }
+  /// 跳转至指定位置
+  Future<void> seekTo(Duration position) async {
+    if (_playerCount == 0) return;
+    if (position < Duration.zero) position = Duration.zero;
 
-  Future<void> seek(Duration position, {bool isSeek = false}) async {
-    if (_playerCount == 0) return;
-    if (isSeek && !useExoPlayer) {
-      /// 拖动进度条调节时，不等待第一帧，防止抖动
-      await _videoPlayerController?.stream.buffer.first;
-    }
-    if (_playerCount == 0) return;
+    _heartDuration = position.inSeconds;
+
     danmakuController?.clear();
     try {
       if (useExoPlayer) {
@@ -1972,28 +1969,6 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
       _updatePlaybackState(position: position);
     } catch (e) {
       if (kDebugMode) debugPrint('seek failed: $e');
-    }
-  }
-
-  /// 跳转至指定位置
-  Future<void> seekTo(Duration position, {bool isSeek = true}) async {
-    if (_playerCount == 0) {
-      return;
-    }
-    if (position < Duration.zero) {
-      position = Duration.zero;
-    }
-    _heartDuration = position.inSeconds;
-
-    if (duration.value != 0) {
-      await seek(position, isSeek: isSeek);
-    } else {
-      // if (kDebugMode) debugPrint('seek duration else');
-      _subForSeek?.cancel();
-      _subForSeek = duration.listen((_) {
-        seek(position, isSeek: isSeek);
-        _cancelSubForSeek();
-      });
     }
   }
 
@@ -2026,10 +2001,10 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   Future<void> play({bool repeat = false, bool hideControls = true}) async {
     if (_playerCount == 0) return;
     // 播放时自动隐藏控制条
-    controls = !hideControls;
+    if (hideControls) controls = false;
     // repeat为true，将从头播放
     if (repeat) {
-      await seekTo(Duration.zero, isSeek: false);
+      await seekTo(Duration.zero);
     }
 
     final hasAudioFocus = await audioSessionHandler?.setActive(true) ?? true;
@@ -2083,9 +2058,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   }
 
   void onSeekEnd() {
-    if (showSeekPreview) {
-      showPreview.value = false;
-    }
+    hidePreviewIfNeeded();
     hasToasted = false;
     isSeeking.value = false;
     hideTaskControls();
@@ -2115,7 +2088,7 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     if (useExoPlayer) {
       await _exoPlayerController?.setVolume(volume.clamp(0, 1));
     } else {
-      await _videoPlayerController?.setVolume(volume * 100);
+      await _mpvVolumeLimiter.setVolumeCapped(_videoPlayerController, volume);
     }
   }
 
@@ -2228,14 +2201,12 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   // 双击播放、暂停
   Future<void> onDoubleTapCenter() async {
     if (!isLive && isCompleted) {
-      await seekTo(Duration.zero, isSeek: false);
+      await seekTo(Duration.zero);
       await play();
+    } else if (isPlaying) {
+      await pause();
     } else {
-      if (isPlaying) {
-        await pause();
-      } else {
-        await play();
-      }
+      await play(hideControls: false);
     }
   }
 
@@ -2275,7 +2246,6 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
   void onForwardBackward(Duration duration) {
     seekTo(
       duration.clamp(Duration.zero, currentDuration),
-      isSeek: false,
     ).whenComplete(play);
   }
 
@@ -2531,7 +2501,6 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     resetScreenRotation();
     cancelLongPressTimer();
     _cancelExoRetry(resetAttempts: true);
-    _cancelSubForSeek();
     if (!_isCloseAll && _playerCount > 1) {
       _playerCount -= 1;
       _heartDuration = 0;
@@ -2649,8 +2618,19 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     }
   }
 
-  void _clearPreview() {
+  void hidePreviewIfNeeded() {
+    if (showSeekPreview) {
+      hidePreview();
+    }
+  }
+
+  void hidePreview() {
+    hoverDx = null;
     showPreview.value = false;
+  }
+
+  void _clearPreview() {
+    hidePreview();
     previewIndex.value = null;
     videoShot = null;
     for (final i in previewCache.values) {

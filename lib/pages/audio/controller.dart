@@ -27,6 +27,7 @@ import 'package:PiliPlus/pages/main_reply/view.dart';
 import 'package:PiliPlus/pages/sponsor_block/block_mixin.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/widgets/triple_mixin.dart';
+import 'package:PiliPlus/plugin/pl_player/backends/mpv/mpv_volume_limiter.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/exo_player/exo_player_controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/audio_normalization_filter.dart';
@@ -88,6 +89,7 @@ class AudioController extends GetxController
 
   late final bool useExoPlayer = Platform.isAndroid && Pref.useExoPlayer;
   bool get playerReady => useExoPlayer ? _exoPlayer != null : player != null;
+  bool _openingMedia = false;
 
   List<PlayerInfoEntry> get playerInfoEntries {
     if (useExoPlayer) {
@@ -182,6 +184,7 @@ class AudioController extends GetxController
 
   double? _lastVolume;
   double _audioFocusGain = 1;
+  final _mpvVolumeLimiter = MpvVolumeLimiter();
   late final RxDouble desktopVolume = RxDouble(Pref.desktopVolume);
   late final AudioSessionPlayerCallbacks _audioSessionCallbacks;
   final Set<ValueChanged<Duration>> _blockPositionListeners = {};
@@ -550,6 +553,7 @@ class AudioController extends GetxController
     final hasAudioFocus = await audioSessionHandler?.setActive(true) ?? true;
     if (!hasAudioFocus || _isDisposed || !playerReady) return;
     _stopStatusTimer();
+    _openingMedia = true;
     try {
       if (useExoPlayer) {
         final player = _exoPlayer!;
@@ -572,20 +576,26 @@ class AudioController extends GetxController
           audioNormalization: _resolveExoAudioNormalization(volume),
         );
       } else {
-        final extras = audioFilterExtras(volume);
-        player
-          ?..setMediaHeader(
-            userAgent: ua,
-            // mpv cannot clear referer option
-            headers: {'Referer': ?referer},
-          )
-          ..open(Media(url, start: _start, extras: extras));
+        final player = this.player!;
+        player.setMediaHeader(
+          userAgent: ua,
+          // mpv cannot clear referer option
+          headers: {'Referer': ?referer},
+        );
+        await player.open(
+          Media(url, start: _start, extras: audioFilterExtras(volume)),
+          play: false,
+        );
+        await onPlay();
       }
     } catch (_) {
       await audioSessionHandler?.setActive(false);
       rethrow;
+    } finally {
+      _openingMedia = false;
     }
     _start = null;
+    if (!_isDisposed) await initSkip();
   }
 
   PlayerStatus _playerStatus = .paused;
@@ -648,9 +658,6 @@ class AudioController extends GetxController
       configuration: PlayerConfiguration(
         options: {
           if (Platform.isAndroid) 'ao': Pref.audioOutput,
-          'volume': PlatformUtils.isDesktop
-              ? (desktopVolume.value * 100).toString()
-              : Pref.playerVolume.toString(),
           ...Pref.initBuffer(),
         },
       ),
@@ -660,6 +667,11 @@ class AudioController extends GetxController
       player = null;
       return;
     }
+    // >100% 的音量走 af 增益+限幅，避免直接放大 mpv volume 导致削波
+    await _mpvVolumeLimiter.setVolumeCapped(
+      player,
+      PlatformUtils.isDesktop ? desktopVolume.value : Pref.playerVolume / 100,
+    );
     final stream = player!.stream;
     _subscriptions = [
       stream.position.listen((position) {
@@ -850,7 +862,7 @@ class AudioController extends GetxController
     if (useExoPlayer) {
       await _exoPlayer?.setVolume((adjustedVolume / 100).clamp(0, 1));
     } else {
-      await player?.setVolume(adjustedVolume);
+      await _mpvVolumeLimiter.setVolumeCapped(player, adjustedVolume / 100);
     }
   }
 
@@ -1192,8 +1204,7 @@ class AudioController extends GetxController
       : player?.state.duration.inMilliseconds ?? 0;
 
   @override
-  Future<void>? seekTo(Duration duration, {required bool isSeek}) =>
-      onSeek(duration);
+  Future<void>? seekTo(Duration duration) => onSeek(duration);
 
   @override
   bool get autoPlay => true;
@@ -1203,6 +1214,12 @@ class AudioController extends GetxController
 
   @override
   bool get blockPlayerReady => playerReady;
+
+  @override
+  bool get blockMediaReady => useExoPlayer
+      ? _exoPlayer?.isCurrentMediaReady ?? false
+      : !_openingMedia &&
+            (player?.state.duration ?? Duration.zero) > Duration.zero;
 
   @override
   bool get blockPlayerPlaying => isPlaying();

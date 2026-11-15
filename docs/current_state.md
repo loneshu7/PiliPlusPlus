@@ -1,10 +1,48 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-11-04 +08:00
+> 最后核对：2026-11-15 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
+
+## 上游 2.2.1 同步与 CI 宿主依赖修复（2026-11-15，验证中）
+
+- 本批属于上游同步及必要 CI 支撑修复。开始于 `sync/upstream-20261102-3e2ef60@5bdf4bf`；
+  工作区仅上次 arm64 安装文档和原有 `nul`。已在当前目录创建普通同步分支
+  `sync/upstream-20261115-217fb54`，以 `4d957b5` 保存原有安装记录；未使用 worktree。
+- fetch 后上游为 `217fb54f51f6764176319bbdedab2a7522d75401`（Release 2.2.1），共同基线
+  `3e2ef609625e4f1c5f0d408e309310810b6c819f`。开始时本地独有 187、上游未合入 66；
+  上游差异 215 文件、+8357/−3143，29 个文件与本地差异重叠，13 个文件有文本冲突。
+  这里的 66 以当前已同步到 2.2.0 的工作分支为比较对象；旧 `release/2.1.10` 尚差 202 个，
+  `origin/main` 尚差 340 个。本批先在同步分支验证，不自动推进这两个分支。完整 66 条提交清单：
+  `build/sync-217fb54-logs/upstream-commits.txt`。
+- 上游内容：树形评论与折叠设置；离线字幕/章节/音量和下载条目维护；粉丝勋章管理与直播 trace；
+  直播通知/PiP 刷新及弹幕按钮；推荐源选择；音频防削波/会话和 seek 修复；PGC 空列表、
+  验证码、匿名 buvid、DLNA URL、动态/专栏/刷新 UI 修复；依赖与补丁更新。
+- 冲突处理采用上游新业务与结构，保留 `pili++`、`com.shudo.plusplus`、签名和现有版本
+  `2.1.10+2026091901`。字幕加载接公共 `PlayerSubtitleSource`，支持本地缓存字幕；直播尺寸
+  监听迁入新 size mixin 并保留公共接口；seek 采用上游单入口，清理小窗调用的旧参数；
+  mpv 音量限幅隔离在 mpv 后端，Media3 保留现有音量/焦点链。音频焦点保留已有 owner 注册和
+  会话释放保护，覆盖上游独立音频焦点修复的等价行为。补丁空白上下文用 `.gitattributes` 声明。
+- 交叉审查补齐本地适配：公共 seek 保留非负下限，避免小窗在前 10 秒后退时向 mpv 传负值；
+  字幕选择扩展名去点并保留 SSA/大小写识别；跳段仅处理当前媒体已就绪的位置。Media3 就绪
+  按明确 ready 事件的 generation 记录，清字幕等局部事件不能继承上一媒体的就绪资格；
+  独立音频 open 后重试挂接跳段监听，mpv 采用上游等待 open 后再播放的流程。
+  新增媒体就绪与跳段时序 4 项回归测试已通过。旧 SponsorBlock 网络请求缺少媒体身份守卫的
+  既有风险未在本批扩写，仍需换源场景真机回归。
+- 指定 Actions `41764557716`（源码 `3ffa457`）失败于 `Flutter quality / Test`：
+  `cnativeapi 0.5.3` hook 调用 `pkg-config --cflags gtk+-3.0 x11 xi`，Ubuntu 缺少三个开发包，
+  测试用例尚未执行；format/analyze 成功，Android 因 `needs: quality` 被跳过。已为 quality
+  增加 `pkg-config libgtk-3-dev libx11-dev libxi-dev` 安装和解析检查；新上游锁定
+  `cnativeapi 0.5.10` 的 hook 仍使用同样三个模块。尚未推送或远程重跑，不宣称 CI 已转绿。
+- 工具链继续 Flutter 3.47.9 / Dart 3.13.7；依赖解析成功，lock 未额外漂移。SDK 26 个补丁
+  （新增 media_query，其余 25 个复核已应用）与 material_ui 1.11.0 的 9 个 Android 补丁均
+  通过反向检查。证据 `build/sync-217fb54-logs/patch-evidence.json`。
+- 首轮完整 Flutter 测试 104/104；补充回归 4/4。新测试首轮夹具发生异步等待和字段重名错误，
+  修正后定向测试通过；最新静态分析 0 error / 0 warning、44 info。Android JVM 6 套件 34/34，
+  0 失败/错误/跳过，2026-11-15 13:35:25 完成。补充修正后的全套 Flutter 测试及三 ABI Release
+  待最终验证。日志在 `build/sync-217fb54-logs/`；ADB 列表为空，未执行新的真机验收。
 
 ## arm64 真机验证安装（2026-11-04）
 

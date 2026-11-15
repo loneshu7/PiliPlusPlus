@@ -1,9 +1,8 @@
 import 'dart:async' show Timer;
-import 'dart:convert' show jsonDecode, utf8;
-import 'dart:io' show Platform, File;
+import 'dart:convert' show utf8;
+import 'dart:io' show Platform;
 import 'dart:typed_data' show Uint8List;
 
-import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/dialog/report.dart';
@@ -12,7 +11,6 @@ import 'package:PiliPlus/common/widgets/marquee.dart';
 import 'package:PiliPlus/common/widgets/player_bar.dart';
 import 'package:PiliPlus/http/danmaku.dart';
 import 'package:PiliPlus/http/danmaku_block.dart';
-import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/http/live.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/video.dart';
@@ -44,11 +42,9 @@ import 'package:PiliPlus/plugin/pl_player/widgets/player_info_dialog.dart';
 import 'package:PiliPlus/services/shutdown_timer_service.dart'
     show shutdownTimerService, ShutdownPanel;
 import 'package:PiliPlus/utils/accounts.dart';
-import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/connectivity_utils.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
-import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
 import 'package:PiliPlus/utils/ios/pip_helper.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
@@ -63,10 +59,9 @@ import 'package:PiliPlus/utils/video_utils.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:collection/collection.dart';
-import 'package:dio/dio.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart' show compute, kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -678,13 +673,11 @@ class HeaderControlState extends State<HeaderControl>
                   try {
                     final result = await FilePicker.pickFile(
                       type: .custom,
-                      allowedExtensions: const [
-                        'json',
-                        'vtt',
-                        'srt',
-                        'ass',
+                      allowedExtensions: [
+                        ...SubtitleUtils.exts.map(
+                          (ext) => ext.startsWith('.') ? ext.substring(1) : ext,
+                        ),
                         'ssa',
-                        'bcc',
                       ],
                     );
                     if (result != null) {
@@ -692,39 +685,14 @@ class HeaderControlState extends State<HeaderControl>
                       final path = file.path;
                       final name = file.name;
                       final length = videoDetailCtr.subtitles.length;
-                      final lowerName = name.toLowerCase();
-                      if (lowerName.endsWith('.json') ||
-                          lowerName.endsWith('.bcc')) {
-                        final file = File(path);
-                        final stream = file.openRead().transform(utf8.decoder);
-                        final buffer = StringBuffer();
-                        await for (final chunk in stream) {
-                          if (!mounted) return;
-                          buffer.write(chunk);
-                        }
-                        if (!mounted) return;
-                        String sub = buffer.toString();
-                        sub = await compute<List, String>(
-                          SubtitleUtils.json2Vtt,
-                          jsonDecode(sub)['body'],
-                        );
-                        if (!mounted) return;
-                        videoDetailCtr.subtitleSources[length] =
-                            PlayerSubtitleSource.webVttData(sub);
-                      } else {
-                        final format = PlayerSubtitleFormat.fromFileName(name);
-                        if (format == null) {
-                          throw const FormatException('无法识别字幕格式');
-                        }
-                        videoDetailCtr.subtitleSources[length] =
-                            PlayerSubtitleSource(
-                              isData: false,
-                              id: path,
-                              format: format,
-                            );
-                      }
+                      final source = await videoDetailCtr.loadFileSubtitle(
+                        path: path,
+                        fileName: name,
+                      );
+                      if (!mounted || source == null) return;
                       videoDetailCtr.subtitles.add(
                         Subtitle(
+                          id: null,
                           lan: '',
                           lanDoc: name.split('.').firstOrNull ?? name,
                         ),
@@ -1245,7 +1213,7 @@ class HeaderControlState extends State<HeaderControl>
                           : null;
                       if (subtitle == null) {
                         final res = await VideoHttp.getSubtitles(
-                          item.subtitleUrl!,
+                          url,
                           format: format,
                         );
                         if (res == null) return;
@@ -1257,21 +1225,9 @@ class HeaderControlState extends State<HeaderControl>
                       }
                       bytes = utf8.encode(subtitle);
                     case .json:
-                      final res = await Request.dio.get<Uint8List>(
-                        url.http2https,
-                        options: Options(
-                          responseType: .bytes,
-                          headers: Constants.baseHeaders,
-                          extra: {'account': const NoAccount()},
-                        ),
-                      );
-                      if (res.statusCode != 200) return;
-                      bytes = Uint8List.fromList(
-                        Request.responseBytesDecoder(
-                          res.data!,
-                          res.headers.map,
-                        ),
-                      );
+                      final res = await SubtitleUtils.getSubtitle(url);
+                      if (res == null) return;
+                      bytes = res;
                   }
                   final videoDetail = introController.videoDetail.value;
                   final name =

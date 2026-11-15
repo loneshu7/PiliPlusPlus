@@ -388,7 +388,6 @@ class _MiniPlayerCard extends StatelessWidget {
                                       player.seekTo(
                                         player.currentPosition -
                                             const Duration(seconds: 10),
-                                        isSeek: false,
                                       );
                                     },
                                     onInteraction: onControlsInteraction,
@@ -416,7 +415,6 @@ class _MiniPlayerCard extends StatelessWidget {
                                         target > player.currentDuration
                                             ? player.currentDuration
                                             : target,
-                                        isSeek: false,
                                       );
                                     },
                                     onInteraction: onControlsInteraction,
