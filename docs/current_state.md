@@ -1,10 +1,44 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-11-15 +08:00
+> 最后核对：2026-11-16 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
+
+## GitHub Release 2.2.1：版本号对齐上游（2026-11-16）
+
+- 用户要求“功能已同步，仓库发一个 Release，版本号同步上游”。本批属于支撑性维护（发布）。
+  开始时 `origin/main@b2aa06e` 已由用户合并 PR #14（同步分支 `90c134b`），相对
+  `upstream/main@217fb54`（Release 2.2.1）落后 0；本地 `main` 停在 `2072a66`，已 `--ff-only`
+  快进到 `b2aa06e`。未使用 worktree，原有未跟踪 `nul` 保留。
+- `pubspec.yaml` 由 `2.1.10+2026091901` 改为 `2.2.1+2026111601`：versionName 与上游一致；
+  versionCode 不采用上游的 `1`，沿用日期序号并高于全部既有交付和验证包，保证覆盖升级。
+  提交 `234df8f40ce77cabc1ef8e4dc0b427930f86b22a` 已普通推送到 `origin/main`。除版本号外无源码改动。
+- 远程 Build `https://github.com/loneshu7/PiliPlusPlus/actions/runs/43793210509`（源码 `234df8f`）
+  结论 success：`Flutter quality`（格式、分析、测试）与 `Release Android`（三 ABI 签名构建）均通过。
+- 三个 APK 取自该次 CI 产物，下载后 SHA-256 与 GitHub artifact digest 一致。按校验脚本要求的
+  文件名复制为 `pili++-2.2.1-2026111601-<abi>-release.apk`（字节相同）后，三包均通过
+  `tool/verify_release.ps1` 严格模式（未用 `-AllowAlreadyDelivered`）：应用名 `pili++`、
+  applicationId `com.shudo.plusplus`、`2.2.1` / `2026111601`、单 ABI 正确、证书 SHA-256
+  `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C`。arm64 包 libapp.so
+  内嵌完整 commit `234df8f…` 已查验，另两个 ABI 未单独查验。三包仍含 `libmpv.so`。
+- 已创建 GitHub Release `https://github.com/loneshu7/PiliPlusPlus/releases/tag/2.2.1`：tag `2.2.1`
+  指向 `234df8f`，非草稿、非预发布，已是 Latest。资产名沿用 CI 约定
+  `pili++_android_2.2.1+2026111601_<abi>.apk`，应用内更新检查可从中解析 versionCode。
+  `tool/release_baseline.json` 已更新为本次交付。本地副本与发布说明在 `build/release-2.2.1-ci/`。
+- 本批未做真机验证，沿用上节 108/108 Flutter、34/34 JVM 的本地结果和本次远程 CI。同步 2.2.1
+  后三类本地差异的真机回归清单（见下节）仍全部待执行，Release 说明中已如实注明。
+- 遗留：本地 tag `2.2.1` 来自上游、指向 `217fb54`，与 origin 同名 tag（`234df8f`）不同，
+  `git fetch origin --tags` 会报 would clobber（`2.1.2.3` 已有同类冲突）；未改动本地或远程 tag。
+  旧 Release 的 tag 与内含 APK 版本不一致（tag `2.1.2.3` 内为 `2.1.10+2026082502`，tag `2.1.10`
+  内为 `2.1.9+2026082501`），本批未改。本地 `main` 的跟踪分支仍是 `upstream/main`。
+
+| ABI | Release 资产 | APK SHA-256 |
+| --- | --- | --- |
+| arm64-v8a | `pili++_android_2.2.1+2026111601_arm64-v8a.apk` | `20E3107B9CA965A13A2FE32A7DDC5C51FFB2BF8839F3C18C63563928357D266B` |
+| armeabi-v7a | `pili++_android_2.2.1+2026111601_armeabi-v7a.apk` | `8B353CE0D0F0B3382744DF487153D7EB60C4C6A6CF5D23116E2B95184D031CAF` |
+| x86_64 | `pili++_android_2.2.1+2026111601_x86_64.apk` | `87E9AD5762E8B0B4D84301011FC7BC7CF2C3ADBD88DE0E97B5346EDE44B8E33C` |
 
 ## arm64 真机安装与同步分支推送（2026-11-15）
 
@@ -898,16 +932,15 @@
 
 ## 最近一次交付
 
-- 版本：`2.1.9`
-- versionCode：`2026082501`
-- ABI：`arm64-v8a`
-- 文件名：`pili++-2.1.9-2026082501-arm64-v8a-release-player-info-dialog-fix-final.apk`
-- APK SHA-256：
-  `CBBA2B07BA3EEE1F048C262D059474AAFA1D0308865568365D04CB0DBB41D0B6`
-- 2026-08-25 11:46 已生成并交付播放信息弹窗本地化修复 arm64 Release APK；该包通过
-  `tool/verify_release.ps1` 的应用身份、版本、ABI 和签名校验，机器发布基线已同步。
-- 该包用于 Samsung SM-S9180 / Android 16 同机复测；ExoPlayer/mpv、普通窗口/全屏的
-  播放信息弹窗、字段复制和播放不中断仍待用户真机确认，尚未发布 GitHub Release。
+- 版本：`2.2.1`
+- versionCode：`2026111601`
+- ABI：`arm64-v8a`、`armeabi-v7a`、`x86_64` 三个分包
+- 文件名：`pili++_android_2.2.1+2026111601_<abi>.apk`
+- arm64-v8a APK SHA-256：
+  `20E3107B9CA965A13A2FE32A7DDC5C51FFB2BF8839F3C18C63563928357D266B`
+- 2026-11-16 以 GitHub Release `2.2.1` 交付，源码 `234df8f`，由 GitHub Actions 构建；三包通过
+  `tool/verify_release.ps1` 严格校验，机器发布基线已同步。详情和另两个 ABI 的 SHA-256 见文首。
+- 同步上游 2.2.1 后三类本地差异的真机回归尚未执行。
 
 ## 已确认的产品决定
 
