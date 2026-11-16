@@ -15,6 +15,7 @@ import 'package:PiliPlus/grpc/bilibili/main/community/reply/v1.pb.dart'
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/models/dynamics/result.dart' show FilePicModel;
+import 'package:PiliPlus/models_new/dynamic/dyn_mention/item.dart';
 import 'package:PiliPlus/pages/common/publish/common_rich_text_pub_page.dart';
 import 'package:PiliPlus/pages/dynamics_mention/controller.dart';
 import 'package:PiliPlus/pages/emote/controller.dart';
@@ -23,7 +24,6 @@ import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/player_feature_result.dart';
 import 'package:PiliPlus/pages/video/reply_search_item/view.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
-import 'package:PiliPlus/utils/extension/context_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/latex_to_unicode.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
@@ -35,14 +35,6 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart' hide TextField;
 
 class ReplyPage extends CommonRichTextPubPage {
-  final int oid;
-  final int root;
-  final int parent;
-  final int replyType;
-  final ReplyInfo? replyItem;
-  final String? hint;
-  final bool canUploadPic;
-
   const ReplyPage({
     super.key,
     super.items,
@@ -55,7 +47,18 @@ class ReplyPage extends CommonRichTextPubPage {
     this.replyItem,
     this.hint,
     this.canUploadPic = true,
+    this.mentionItem,
   });
+
+  final int oid;
+  final int root;
+  final int parent;
+  final int replyType;
+  final ReplyInfo? replyItem;
+  final String? hint;
+  final bool canUploadPic;
+  // mention
+  final MentionItem? mentionItem;
 
   @override
   State<ReplyPage> createState() => _ReplyPageState();
@@ -136,30 +139,22 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
   List<Widget> buildInputView() {
     return [
       Padding(
-        padding: const EdgeInsets.only(
-          top: 12,
-          right: 15,
-          left: 15,
-          bottom: 10,
-        ),
-        child: Obx(
-          () => RichTextField(
-            key: key,
-            controller: editController,
-            minLines: 4,
-            maxLines: 8,
-            autofocus: false,
-            readOnly: readOnly.value,
-            onChanged: onChanged,
-            onSubmitted: onSubmitted,
-            focusNode: focusNode,
-            decoration: InputDecoration(
-              hintText: widget.hint ?? "输入回复内容",
-              border: InputBorder.none,
-              hintStyle: const TextStyle(fontSize: 14),
-            ),
-            style: theme.textTheme.bodyLarge,
+        padding: const .only(top: 12, right: 15, left: 15, bottom: 10),
+        child: RichTextField(
+          key: key,
+          controller: editController,
+          minLines: 4,
+          maxLines: 8,
+          autofocus: false,
+          onChanged: onChanged,
+          onSubmitted: onSubmitted,
+          focusNode: focusNode,
+          decoration: InputDecoration(
+            hintText: widget.hint ?? "输入回复内容",
+            border: InputBorder.none,
+            hintStyle: const TextStyle(fontSize: 14),
           ),
+          style: theme.textTheme.bodyLarge,
         ),
       ),
       Divider(
@@ -181,7 +176,7 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
                     ? const Icon(Icons.image, size: 22)
                     : const Icon(Icons.image_not_supported, size: 22),
                 onPressed: widget.canUploadPic
-                    ? onPickImage
+                    ? onPickImageThrottle
                     : () => SmartDialog.showToast('当前评论区不支持发送图片'),
               ),
             ],
@@ -226,7 +221,7 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
 
   @override
   Widget buildMorePanel() {
-    double height = context.isTablet ? 300 : 170;
+    double height = MediaQuery.isTabletOf(context) ? 300 : 170;
     final keyboardHeight = controller.keyboardHeight;
     if (keyboardHeight != 0) {
       height = max(height, keyboardHeight);
@@ -511,5 +506,23 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
         ..syncRichText(delta)
         ..value = newValue;
     }
+  }
+
+  @override
+  MentionItem? get topMentionItem {
+    final mentionItem = widget.mentionItem;
+    if (mentionItem != null) return mentionItem;
+
+    final replyItem = widget.replyItem;
+    if (replyItem != null) {
+      final basic = replyItem.memberV2.basic;
+      return MentionItem(
+        face: basic.face,
+        name: basic.name,
+        uid: replyItem.mid.toString(),
+      );
+    }
+
+    return null;
   }
 }

@@ -27,8 +27,6 @@ import 'package:PiliPlus/pages/fav_detail/controller.dart'
 import 'package:PiliPlus/pages/group_panel/view.dart';
 import 'package:PiliPlus/pages/login/geetest/geetest_webview_dialog.dart';
 import 'package:PiliPlus/utils/accounts.dart';
-import 'package:PiliPlus/utils/extension/context_ext.dart';
-import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
@@ -198,12 +196,12 @@ abstract final class RequestUtils {
                     useSafeArea: true,
                     isScrollControlled: true,
                     constraints: BoxConstraints(
-                      maxWidth: min(640, context.mediaQueryShortestSide),
+                      maxWidth: min(640, MediaQuery.shortestSideOf(context)),
                     ),
                     builder: (BuildContext context) {
                       final maxChildSize =
                           PlatformUtils.isMobile &&
-                              !context.mediaQuerySize.isPortrait
+                              !MediaQuery.isPortraitOf(context)
                           ? 1.0
                           : 0.7;
                       return DraggableScrollableSheet(
@@ -297,7 +295,7 @@ abstract final class RequestUtils {
   static Future<void> insertCreatedDyn(dynamic id) async {
     if (id != null) {
       try {
-        await Future.delayed(const Duration(milliseconds: 450));
+        await Future.pause(const Duration(milliseconds: 450));
         final res = await DynamicsHttp.dynamicDetail(id: id);
         if (res case final Success<DynamicItemModel> e) {
           final ctr = Get.find<DynamicsTabController>(tag: 'all');
@@ -323,7 +321,7 @@ abstract final class RequestUtils {
       try {
         if (id != null) {
           if (!isManual) {
-            await Future.delayed(const Duration(seconds: 5));
+            await Future.pause(const Duration(seconds: 5));
           }
           final res = await DynamicsHttp.dynamicDetail(
             id: id,
@@ -482,11 +480,14 @@ abstract final class RequestUtils {
                 TextButton(
                   onPressed: () {
                     if (checkedId != null) {
-                      final removeList = ctr.allChecked.toSet();
+                      final isFav = ctr is BaseFavController;
+                      final removeList = isFav
+                          ? ctr.allChecked.toList().reversed.toSet()
+                          : ctr.allChecked.toSet();
                       SmartDialog.showLoading();
                       FavHttp.copyOrMoveFav(
                         isCopy: isCopy,
-                        isFav: ctr is BaseFavController,
+                        isFav: isFav,
                         srcMediaId: mediaId,
                         tarMediaId: checkedId,
                         resources: removeList
@@ -506,6 +507,11 @@ abstract final class RequestUtils {
                             ctr.loadingState
                               ..value.data!.removeWhere(removeList.contains)
                               ..refresh();
+                            if (isFav) {
+                              (ctr as BaseFavController).updateCount?.call(
+                                removeList.length,
+                              );
+                            }
                           }
                           SmartDialog.dismiss();
                           SmartDialog.showToast('${isCopy ? '复制' : '移动'}成功');

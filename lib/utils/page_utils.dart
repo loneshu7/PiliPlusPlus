@@ -13,6 +13,7 @@ import 'package:PiliPlus/models/common/video/video_type.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/models_new/pgc/pgc_info_model/episode.dart';
 import 'package:PiliPlus/models_new/video/video_detail/dimension.dart';
+import 'package:PiliPlus/pages/article/view.dart';
 import 'package:PiliPlus/pages/common/common_intro_controller.dart';
 import 'package:PiliPlus/services/in_app_mini_player_service.dart';
 import 'package:PiliPlus/pages/common/publish/publish_route.dart';
@@ -21,14 +22,13 @@ import 'package:PiliPlus/pages/fav_panel/view.dart';
 import 'package:PiliPlus/pages/share/view.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
-import 'package:PiliPlus/utils/extension/context_ext.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
-import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/reply_scheme_helper.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/url_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -115,6 +115,8 @@ abstract final class PageUtils {
     Object? rid,
     bool off = false,
     Object? type,
+    int? rootRpId,
+    int? secondRpId,
   }) async {
     assert(id != null || rid != null);
     SmartDialog.showLoading();
@@ -126,12 +128,11 @@ abstract final class PageUtils {
     SmartDialog.dismiss();
     if (res case Success(:final response)) {
       if (response.basic?.commentType == 12) {
-        toDupNamed(
-          '/articlePage',
-          parameters: {
-            'id': id!,
-            'type': 'opus',
-          },
+        ArticlePage.toArticlePage(
+          id: id!,
+          type: .opus,
+          rootRpId: rootRpId,
+          secondRpId: secondRpId,
           off: off,
         );
       } else {
@@ -139,6 +140,8 @@ abstract final class PageUtils {
           '/dynamicDetail',
           arguments: {
             'item': response,
+            rootRpIdKey: ?rootRpId,
+            secondRpIdKey: ?secondRpId,
           },
           off: off,
         );
@@ -157,11 +160,11 @@ abstract final class PageUtils {
       useSafeArea: true,
       isScrollControlled: true,
       constraints: BoxConstraints(
-        maxWidth: min(640, context.mediaQueryShortestSide),
+        maxWidth: min(640, MediaQuery.shortestSideOf(context)),
       ),
       builder: (BuildContext context) {
         final maxChildSize =
-            PlatformUtils.isMobile && !context.mediaQuerySize.isPortrait
+            PlatformUtils.isMobile && !MediaQuery.isPortraitOf(context)
             ? 1.0
             : 0.7;
         return DraggableScrollableSheet(
@@ -232,12 +235,10 @@ abstract final class PageUtils {
 
     void push() {
       if (item.basic?.commentType == 12) {
-        toDupNamed(
-          '/articlePage',
-          parameters: {
-            'id': item.idStr,
-            'type': 'opus',
-          },
+        ArticlePage.toArticlePage(
+          id: item.idStr,
+          type: .opus,
+          viewComment: viewComment,
         );
       } else {
         if (item.linkFolded) {
@@ -281,7 +282,7 @@ abstract final class PageUtils {
             }
           }
           // redirectUrl from jumpUrl
-          if (await UrlUtils.parseRedirectUrl(archive.jumpUrl.http2https, false)
+          if (await UrlUtils.parseRedirectUrl(archive.jumpUrl.http2https)
               case final redirectUrl?) {
             if (viewPgcFromUri(redirectUrl)) {
               return;
@@ -310,12 +311,10 @@ abstract final class PageUtils {
 
       /// 专栏文章查看
       case 'DYNAMIC_TYPE_ARTICLE':
-        toDupNamed(
-          '/articlePage',
-          parameters: {
-            'id': item.idStr,
-            'type': 'opus',
-          },
+        ArticlePage.toArticlePage(
+          id: item.idStr,
+          type: .opus,
+          viewComment: viewComment,
         );
         break;
 
@@ -471,7 +470,7 @@ abstract final class PageUtils {
     return Get.key.currentState!.push(
       PublishRoute(
         pageBuilder: (context, animation, secondaryAnimation) {
-          final isPortrait = context.isPortrait;
+          final isPortrait = MediaQuery.isPortraitOf(context);
           return SafeArea(
             child: CustomFractionallySizedBox(
               maxWidth: maxWidth,
@@ -487,7 +486,7 @@ abstract final class PageUtils {
         },
         transitionDuration: const Duration(milliseconds: 350),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
-          final begin = context.isPortrait
+          final begin = MediaQuery.isPortraitOf(context)
               ? const Offset(0.0, 1.0)
               : const Offset(1.0, 0.0);
           return SlideTransition(
@@ -536,6 +535,8 @@ abstract final class PageUtils {
     bool off = false,
     bool isVertical = false,
     Dimension? dimension,
+    int? rootRpId,
+    int? secondRpId,
   }) {
     final arguments = {
       'aid': aid ?? IdUtils.bv2av(bvid!),
@@ -550,6 +551,8 @@ abstract final class PageUtils {
       'videoType': videoType,
       'isVertical': dimension?.isVertical ?? isVertical,
       'heroTag': Utils.makeHeroTag(cid),
+      rootRpIdKey: ?rootRpId,
+      secondRpIdKey: ?secondRpId,
       ...?extraArguments,
     };
     InAppMiniPlayerService.instance.dismiss();
@@ -563,6 +566,7 @@ abstract final class PageUtils {
     int? progress, // milliseconds
     int? aid,
     bool off = false,
+    bool viewLater = false,
   }) {
     RegExpMatch? match = _pgcRegex.firstMatch(uri);
     if (match != null) {
@@ -571,17 +575,19 @@ abstract final class PageUtils {
       if (isPgc) {
         viewPgc(
           seasonId: isSeason ? id : null,
-          epId: isSeason ? null : id,
+          epId: isSeason ? null : .parse(id),
           progress: progress,
           off: off,
+          viewLater: viewLater,
         );
       } else {
         viewPugv(
           seasonId: isSeason ? id : null,
-          epId: isSeason ? null : id,
+          epId: isSeason ? null : .parse(id),
           aid: aid,
           progress: progress,
           off: off,
+          viewLater: viewLater,
         );
       }
       return true;
@@ -606,96 +612,41 @@ abstract final class PageUtils {
   }
 
   static Future<void> viewPgc({
-    dynamic seasonId,
-    dynamic epId,
+    Object? seasonId,
+    int? epId,
     int? progress, // milliseconds
     bool off = false,
+    bool viewLater = false,
   }) async {
     try {
       SmartDialog.showLoading(msg: '资源获取中');
       final res = await SearchHttp.pgcInfo(seasonId: seasonId, epId: epId);
       SmartDialog.dismiss();
       if (res case Success(:final response)) {
-        final episodes = response.episodes;
-        final hasEpisode = episodes != null && episodes.isNotEmpty;
+        final (EpisodeItem? episode, int? sectionIndex) = response.findEpisode(
+          epId,
+        );
 
-        EpisodeItem? episode;
-
-        void viewSection(EpisodeItem episode) {
+        if (episode != null) {
           toVideoPage(
-            videoType: VideoType.ugc,
+            videoType: .pgc,
             bvid: episode.bvid!,
             cid: episode.cid!,
-            seasonId: response.seasonId,
-            epId: episode.epId,
+            seasonId: response.seasonId!,
+            epId: episode.epId!,
             cover: episode.cover,
             title: episode.title,
             progress: progress,
             extraArguments: {
-              'pgcApi': true,
               'pgcItem': response,
+              if (viewLater) 'viewLater': true,
+              'sectionIndex': ?sectionIndex,
             },
             off: off,
           );
-        }
-
-        if (epId != null) {
-          epId = epId.toString();
-          if (hasEpisode) {
-            episode = episodes.firstWhereOrNull(
-              (item) => item.epId.toString() == epId,
-            );
-          }
-
-          // find section
-          if (episode == null) {
-            final sections = response.section;
-            if (sections != null && sections.isNotEmpty) {
-              for (final section in sections) {
-                final episodes = section.episodes;
-                if (episodes != null && episodes.isNotEmpty) {
-                  for (final episode in episodes) {
-                    if (episode.epId.toString() == epId) {
-                      // view as ugc
-                      viewSection(episode);
-                      return;
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        if (hasEpisode) {
-          episode ??= findEpisode(
-            episodes,
-            epId: response.userStatus?.progress?.lastEpId,
-          );
-          toVideoPage(
-            videoType: VideoType.pgc,
-            bvid: episode.bvid!,
-            cid: episode.cid!,
-            seasonId: response.seasonId,
-            epId: episode.epId,
-            pgcType: response.type,
-            cover: episode.cover,
-            progress: progress,
-            extraArguments: {
-              'pgcItem': response,
-            },
-            off: off,
-          );
-          return;
         } else {
-          episode ??= response.section?.firstOrNull?.episodes?.firstOrNull;
-          if (episode != null) {
-            viewSection(episode);
-            return;
-          }
+          SmartDialog.showToast('剧集为空');
         }
-
-        SmartDialog.showToast('资源加载失败');
       } else {
         res.toast();
       }
@@ -707,11 +658,12 @@ abstract final class PageUtils {
   }
 
   static Future<void> viewPugv({
-    dynamic seasonId,
-    dynamic epId,
+    Object? seasonId,
+    int? epId,
     int? aid,
     int? progress, // milliseconds
     bool off = false,
+    bool viewLater = false,
   }) async {
     try {
       SmartDialog.showLoading(msg: '资源获取中');
@@ -723,22 +675,25 @@ abstract final class PageUtils {
           EpisodeItem? episode;
           if (aid != null) {
             episode = episodes.firstWhereOrNull((e) => e.aid == aid);
+          } else {
+            epId ??= response.userStatus?.progress?.lastEpId;
+            if (epId != null) {
+              episode = episodes.firstWhereOrNull((e) => e.id == epId);
+            }
           }
-          episode ??= findEpisode(
-            episodes,
-            epId: epId ?? response.userStatus?.progress?.lastEpId,
-            isPgc: false,
-          );
+          episode ??= episodes.first;
+
           toVideoPage(
-            videoType: VideoType.pugv,
+            videoType: .pugv,
             aid: episode.aid!,
             cid: episode.cid!,
-            seasonId: response.seasonId,
-            epId: episode.id,
+            seasonId: response.seasonId!,
+            epId: episode.id!,
             cover: episode.cover,
             progress: progress,
             extraArguments: {
               'pgcItem': response,
+              if (viewLater) 'viewLater': true,
             },
             off: off,
           );

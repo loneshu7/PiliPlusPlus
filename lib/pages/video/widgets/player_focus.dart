@@ -8,6 +8,7 @@ import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/services.dart'
     show KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, HardwareKeyboard;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -69,6 +70,18 @@ class PlayerFocus extends StatelessWidget {
     plPlayerController.setVolume(volume);
   }
 
+  void _stepPlaybackSpeed({required bool isIncrease}) {
+    final speed = plPlayerController.playbackSpeed;
+    final speedList = plPlayerController.speedList;
+    final newSpeed = isIncrease
+        ? speedList.where((e) => e > speed).minOrNull
+        : speedList.where((e) => e < speed).maxOrNull;
+    if (newSpeed != null) {
+      plPlayerController.setPlaybackSpeed(newSpeed);
+    }
+    SmartDialog.showToast('${newSpeed ?? speed}x播放');
+  }
+
   void _updateVolume(KeyEvent event, {required bool isIncrease}) {
     if (event is KeyDownEvent) {
       if (hasPlayer) {
@@ -118,6 +131,29 @@ class PlayerFocus extends StatelessWidget {
       return true;
     }
 
+    if (key == .arrowLeft) {
+      if (!plPlayerController.isLive) {
+        if (event is KeyDownEvent) {
+          if (hasPlayer) {
+            plPlayerController
+              ..hidePreviewIfNeeded()
+              ..seekPosition.value = plPlayerController.position.value
+              ..longPressTimer?.cancel()
+              ..longPressTimer = Timer.periodic(
+                const Duration(milliseconds: 200),
+                plPlayerController.multiBackwardStart,
+              );
+          }
+        } else if (event is KeyUpEvent) {
+          plPlayerController.cancelLongPressTimer();
+          if (hasPlayer) {
+            plPlayerController.multiBackwardEnd();
+          }
+        }
+      }
+      return true;
+    }
+
     if (key == LogicalKeyboardKey.arrowRight) {
       if (!plPlayerController.isLive) {
         if (event is KeyDownEvent) {
@@ -148,18 +184,6 @@ class PlayerFocus extends StatelessWidget {
     }
 
     if (event is KeyDownEvent) {
-      final isDigit1 = key == LogicalKeyboardKey.digit1;
-      if (isDigit1 || key == LogicalKeyboardKey.digit2) {
-        if (HardwareKeyboard.instance.isShiftPressed && hasPlayer) {
-          final speed = isDigit1 ? 1.0 : 2.0;
-          if (speed != plPlayerController.playbackSpeed) {
-            plPlayerController.setPlaybackSpeed(speed);
-          }
-          SmartDialog.showToast('${speed}x播放');
-        }
-        return true;
-      }
-
       switch (key) {
         case LogicalKeyboardKey.space:
           if (plPlayerController.isLive || canPlay!()) {
@@ -235,15 +259,19 @@ class PlayerFocus extends StatelessWidget {
       }
 
       if (!plPlayerController.isLive) {
-        switch (key) {
-          case LogicalKeyboardKey.arrowLeft:
-            if (hasPlayer) {
-              plPlayerController.onBackward(
-                plPlayerController.fastForBackwardDuration,
-              );
+        final isDigit1 = key == LogicalKeyboardKey.digit1;
+        if (isDigit1 || key == LogicalKeyboardKey.digit2) {
+          if (HardwareKeyboard.instance.isShiftPressed && hasPlayer) {
+            final speed = isDigit1 ? 1.0 : 2.0;
+            if (speed != plPlayerController.playbackSpeed) {
+              plPlayerController.setPlaybackSpeed(speed);
             }
-            return true;
+            SmartDialog.showToast('${speed}x播放');
+          }
+          return true;
+        }
 
+        switch (key) {
           case LogicalKeyboardKey.keyW:
             if (HardwareKeyboard.instance.isMetaPressed) {
               return true;
@@ -278,6 +306,12 @@ class PlayerFocus extends StatelessWidget {
               if (!introController.nextPlay()) {
                 SmartDialog.showToast('已经是最后一集了');
               }
+            }
+            return true;
+
+          case LogicalKeyboardKey.comma || LogicalKeyboardKey.period:
+            if (hasPlayer && !plPlayerController.longPressStatus.value) {
+              _stepPlaybackSpeed(isIncrease: key == LogicalKeyboardKey.period);
             }
             return true;
         }

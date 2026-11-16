@@ -143,6 +143,7 @@ class ExoPlayerController {
   final StreamController<ExoPlayerEvent> _controller =
       StreamController<ExoPlayerEvent>.broadcast();
   int _generation = 0;
+  int? _readyGeneration;
   bool _playWhenReady = false;
 
   ExoPlayerEvent state = const ExoPlayerEvent(
@@ -168,6 +169,8 @@ class ExoPlayerController {
 
   Stream<ExoPlayerEvent> get events => _controller.stream;
   bool get playWhenReady => _playWhenReady;
+  bool get isCurrentMediaReady =>
+      _readyGeneration == _generation && state.ready;
 
   static Future<ExoPlayerController> create({
     bool enableHardwareDecoding = true,
@@ -197,6 +200,9 @@ class ExoPlayerController {
             return;
           }
           player._generation = next.generation;
+          if (event.containsKey('ready')) {
+            player._readyGeneration = next.ready ? next.generation : null;
+          }
           if (event.containsKey('playWhenReady')) {
             player._playWhenReady = next.playWhenReady;
           }

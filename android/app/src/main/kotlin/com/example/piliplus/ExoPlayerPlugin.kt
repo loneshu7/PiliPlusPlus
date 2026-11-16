@@ -1535,16 +1535,12 @@ private data class Media3PlaybackConfiguration(
         append(", hwdec=")
         append(decoderResolution.description)
         append(", decoderFallback=true")
-            if (isLive) {
-                append(", buffer=media3-live-default")
-                return@buildString
-            }
             val policy = resolveMedia3BufferPolicy(
                 targetBufferBytes,
                 bufferDurationMs,
-                isLive = false,
-            ) ?: return@buildString
-            append(", buffer=custom-safe")
+                isLive,
+            )
+            append(if (isLive) ", buffer=live-custom-safe" else ", buffer=custom-safe")
             append(", targetBuffer=")
             append(
                 String.format(java.util.Locale.US, "%.2f", policy.targetBufferBytes / 1048576.0),
@@ -1553,12 +1549,17 @@ private data class Media3PlaybackConfiguration(
             append(policy.minBufferMs)
             append(" ms, maxBuffer=")
             append(policy.maxBufferMs)
-            append(" ms, timePriority=true")
+            append(" ms, startPlayback=")
+            append(policy.bufferForPlaybackMs)
+            append(" ms, resumePlayback=")
+            append(policy.bufferForPlaybackAfterRebufferMs)
+            append(" ms, backBuffer=")
+            append(policy.backBufferDurationMs)
+            append(" ms, timePriority=false")
         }
 
     fun createLoadControl(): DefaultLoadControl {
         val policy = resolveMedia3BufferPolicy(targetBufferBytes, bufferDurationMs, isLive)
-            ?: return DefaultLoadControl()
         return DefaultLoadControl.Builder()
             .setBufferDurationsMsForStreaming(
                 policy.minBufferMs,
@@ -1567,7 +1568,7 @@ private data class Media3PlaybackConfiguration(
                 policy.bufferForPlaybackAfterRebufferMs,
             )
             .setTargetBufferBytes(policy.targetBufferBytes)
-            .setPrioritizeTimeOverSizeThresholdsForStreaming(true)
+            .setPrioritizeTimeOverSizeThresholdsForStreaming(false)
             .setBackBuffer(policy.backBufferDurationMs, false)
             .build()
     }

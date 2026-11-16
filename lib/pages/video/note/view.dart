@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-
 import 'package:PiliPlus/common/skeleton/video_reply.dart';
 import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
@@ -9,14 +7,13 @@ import 'package:PiliPlus/common/widgets/scaffold/mini_scaffold.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/models_new/video/video_note_list/list.dart';
+import 'package:PiliPlus/pages/article/view.dart';
 import 'package:PiliPlus/pages/common/slide/common_slide_page.dart';
 import 'package:PiliPlus/pages/video/note/controller.dart';
 import 'package:PiliPlus/pages/webview/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
-import 'package:desktop_webview_window/desktop_webview_window.dart' as dww;
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -41,17 +38,6 @@ class NoteListPage extends CommonSlidePage {
 
 class _NoteListPageState extends State<NoteListPage>
     with SingleTickerProviderStateMixin, CommonSlideMixin {
-  static dww.Webview? _activeNoteWebview;
-  static bool _isOpeningNote = false;
-  static Object? _dwwOwner;
-
-  void _closeLinuxWebview({bool close = false}) {
-    if (close) _activeNoteWebview?.close();
-    _activeNoteWebview = null;
-    _isOpeningNote = false;
-    _dwwOwner = null;
-  }
-
   late final NoteListPageCtr _controller;
 
   @override
@@ -66,14 +52,11 @@ class _NoteListPageState extends State<NoteListPage>
   @override
   void dispose() {
     Get.delete<NoteListPageCtr>(tag: widget.heroTag);
-    if (_dwwOwner == this) {
-      _closeLinuxWebview(close: true);
-    }
     super.dispose();
   }
 
   @override
-  Widget buildPage(ThemeData theme) {
+  Widget buildPage() {
     return Material(
       child: MiniScaffold(
         body: Column(
@@ -108,7 +91,7 @@ class _NoteListPageState extends State<NoteListPage>
                 ],
               ),
             ),
-            Expanded(child: enableSlide ? slideList(theme) : buildList(theme)),
+            Expanded(child: enableSlide ? slideList() : buildList()),
           ],
         ),
       ),
@@ -125,7 +108,7 @@ class _NoteListPageState extends State<NoteListPage>
   }
 
   @override
-  Widget buildList(ThemeData theme) {
+  Widget buildList() {
     final child = refreshIndicator(
       onRefresh: _controller.onRefresh,
       child: CustomScrollView(
@@ -135,7 +118,7 @@ class _NoteListPageState extends State<NoteListPage>
           SliverPadding(
             padding: const .only(bottom: 100),
             sliver: Obx(
-              () => _buildBody(theme, _controller.loadingState.value),
+              () => _buildBody(_controller.loadingState.value),
             ),
           ),
         ],
@@ -173,7 +156,7 @@ class _NoteListPageState extends State<NoteListPage>
                   borderRadius: BorderRadius.all(Radius.circular(6)),
                 ),
               ),
-              onPressed: _onTakeNote,
+              onPressed: () => _onTakeNote(context),
               child: const Text('开始记笔记'),
             ),
           ),
@@ -183,7 +166,6 @@ class _NoteListPageState extends State<NoteListPage>
   }
 
   Widget _buildBody(
-    ThemeData theme,
     LoadingState<List<VideoNoteItemModel>?> loadingState,
   ) {
     switch (loadingState) {
@@ -206,7 +188,7 @@ class _NoteListPageState extends State<NoteListPage>
               if (index == response.length - 1) {
                 _controller.onLoadMore();
               }
-              return _itemWidget(theme, response[index]);
+              return _itemWidget(response[index]);
             },
             itemCount: response.length,
             separatorBuilder: (context, index) => divider,
@@ -221,16 +203,13 @@ class _NoteListPageState extends State<NoteListPage>
     }
   }
 
-  Widget _itemWidget(ThemeData theme, VideoNoteItemModel item) {
+  Widget _itemWidget(VideoNoteItemModel item) {
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
-        onTap: () => Get.toNamed(
-          '/articlePage',
-          parameters: {
-            'id': item.cvid!.toString(),
-            'type': 'read',
-          },
+        onTap: () => ArticlePage.toArticlePage(
+          id: item.cvid!.toString(),
+          type: .read,
         ),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -315,41 +294,9 @@ class _NoteListPageState extends State<NoteListPage>
     );
   }
 
-  Future<void> _onTakeNoteLinux(String url) async {
-    if (_activeNoteWebview != null) {
-      await _activeNoteWebview?.bringToForeground();
-      SmartDialog.showToast('已置顶笔记窗口');
-      return;
-    }
-    if (_isOpeningNote) return;
-    _isOpeningNote = true;
-    SmartDialog.showToast('已在新窗口打开');
-    try {
-      var webview = await WebviewPage.openLinux(
-        oid: widget.oid,
-        title: widget.title,
-        url: url,
-        onClose: _closeLinuxWebview,
-      );
-      if (mounted) {
-        _activeNoteWebview = webview;
-        _dwwOwner = this;
-      } else {
-        webview?.close();
-        webview = null;
-      }
-    } finally {
-      _isOpeningNote = false;
-    }
-  }
-
-  void _onTakeNote() {
+  void _onTakeNote(BuildContext context) {
     final url =
         'https://www.bilibili.com/h5/note-app?oid=${widget.oid}&pagefrom=ugcvideo&is_stein_gate=${widget.isStein ? 1 : 0}';
-    if (Platform.isLinux) {
-      _onTakeNoteLinux(url);
-      return;
-    }
     MiniScaffold.of(context).showBottomSheet(
       constraints: const BoxConstraints(),
       (context) => WebviewPage(oid: widget.oid, title: widget.title, url: url),

@@ -10,7 +10,6 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/search/search_trending/list.dart';
 import 'package:PiliPlus/pages/search_trending/controller.dart';
 import 'package:PiliPlus/utils/color_utils.dart';
-import 'package:PiliPlus/utils/extension/context_ext.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
@@ -37,7 +36,7 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final padding = MediaQuery.viewPaddingOf(context);
-    final size = context.mediaQuerySize;
+    final size = MediaQuery.sizeOf(context);
     final maxWidth = size.width - padding.horizontal;
     final width = size.isPortrait ? maxWidth : min(640.0, maxWidth * 0.6);
     final height = width * 528 / 1125;
@@ -61,6 +60,7 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
                         child: Image.asset(
                           width: width,
                           height: height,
+                          gaplessPlayback: true,
                           cacheWidth: width.cacheSize(context),
                           Assets.trendingBanner,
                           filterQuality: .low,
@@ -147,9 +147,7 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
                 dense: true,
                 onTap: () => Get.toNamed(
                   '/searchResult',
-                  parameters: {
-                    'keyword': item.keyword!,
-                  },
+                  parameters: {'keyword': item.keyword},
                 ),
                 leading: index < _controller.topCount
                     ? const Icon(
@@ -173,7 +171,7 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
                   children: [
                     Flexible(
                       child: Text(
-                        item.keyword!,
+                        item.showName,
                         maxLines: 1,
                         overflow: .ellipsis,
                         strutStyle: const StrutStyle(height: 1, leading: 0),

@@ -5,6 +5,7 @@ import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/common/widgets/pair.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
+import 'package:PiliPlus/common/widgets/view_insets_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/sponsor_block.dart';
 import 'package:PiliPlus/models/common/sponsor_block/action_type.dart';
@@ -15,6 +16,7 @@ import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/post_panel/popup_menu_text.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
+import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -106,35 +108,94 @@ class PostPanel extends CommonSlidePage {
               icon: const Icon(Icons.edit),
               onPressed: () async {
                 String initV = value;
-                final res = await showDialog<String>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    content: TextFormField(
-                      initialValue: value,
-                      autofocus: true,
-                      onChanged: (value) => initV = value,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[\d:.]+')),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: Get.back,
-                        child: Text(
-                          '取消',
-                          style: TextStyle(
-                            color: theme.colorScheme.outline,
+                final String? res;
+                final textField = TextFormField(
+                  initialValue: value,
+                  autofocus: true,
+                  textInputAction: .done,
+                  onChanged: (value) => initV = value,
+                  decoration: PlatformUtils.isMobile
+                      ? const InputDecoration(
+                          border: .none,
+                          isDense: true,
+                          contentPadding: .zero,
+                        )
+                      : null,
+                  onFieldSubmitted: (value) => Get.back(result: initV),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[\d:.]+')),
+                  ],
+                );
+                if (PlatformUtils.isDesktop || MediaQuery.isTabletOf(context)) {
+                  res = await showDialog<String>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      content: textField,
+                      title: Text(
+                        '${isFirst ? '开始' : '结束'}: ',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      contentPadding: const .fromLTRB(24, 6, 24, 16),
+                      actions: [
+                        TextButton(
+                          onPressed: Get.back,
+                          child: Text(
+                            '取消',
+                            style: TextStyle(color: theme.colorScheme.outline),
                           ),
                         ),
-                      ),
-                      TextButton(
-                        onPressed: () => Get.back(result: initV),
-                        child: const Text('确定'),
-                      ),
-                    ],
-                  ),
-                );
-
+                        TextButton(
+                          onPressed: () => Get.back(result: initV),
+                          child: const Text('确定'),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  res = await showModalBottomSheet<String>(
+                    context: context,
+                    useSafeArea: true,
+                    isScrollControlled: true,
+                    constraints: const BoxConstraints(maxWidth: 450),
+                    builder: (context) {
+                      final colorScheme = ColorScheme.of(context);
+                      return Padding(
+                        padding: const .symmetric(horizontal: 16, vertical: 10),
+                        child: ViewInsetsSafeArea(
+                          child: SafeArea(
+                            bottom: true,
+                            child: Row(
+                              spacing: 10,
+                              mainAxisSize: .min,
+                              children: [
+                                Text('${isFirst ? '开始' : '结束'}: '),
+                                Expanded(child: textField),
+                                iconButton(
+                                  size: 34,
+                                  iconSize: 19,
+                                  tooltip: '取消',
+                                  onPressed: Get.back,
+                                  iconColor: colorScheme.outline,
+                                  bgColor: colorScheme.onInverseSurface,
+                                  icon: const Icon(Icons.clear),
+                                ),
+                                iconButton(
+                                  size: 34,
+                                  iconSize: 19,
+                                  tooltip: '确定',
+                                  onPressed: () => Get.back(result: initV),
+                                  iconColor: colorScheme.onSecondaryContainer,
+                                  bgColor: colorScheme.secondaryContainer,
+                                  icon: const Icon(Icons.check),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
                 if (res != null) {
                   try {
                     List<num> split = res
@@ -190,7 +251,7 @@ class _PostPanelState extends State<PostPanel>
   late double bottom;
 
   @override
-  Widget buildPage(ThemeData theme) {
+  Widget buildPage() {
     return SimpleScaffold(
       appBar: SizedBox(
         height: 45,
@@ -231,7 +292,7 @@ class _PostPanelState extends State<PostPanel>
           ],
         ),
       ),
-      body: enableSlide ? slideList(theme) : buildList(theme),
+      body: enableSlide ? slideList() : buildList(),
       fab: list.isEmpty
           ? null
           : Padding(
@@ -277,7 +338,7 @@ class _PostPanelState extends State<PostPanel>
   }
 
   @override
-  Widget buildList(ThemeData theme) {
+  Widget buildList() {
     if (list.isEmpty) {
       return scrollableError;
     }
@@ -287,7 +348,7 @@ class _PostPanelState extends State<PostPanel>
       padding: EdgeInsets.only(bottom: 88 + bottom),
       itemCount: list.length,
       itemBuilder: (context, index) {
-        return _buildItem(theme, index, list[index]);
+        return _buildItem(index, list[index]);
       },
     );
   }
@@ -314,7 +375,7 @@ class _PostPanelState extends State<PostPanel>
     }
   }
 
-  Widget _buildItem(ThemeData theme, int index, PostSegmentModel item) {
+  Widget _buildItem(int index, PostSegmentModel item) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -457,10 +518,7 @@ class _PostPanelState extends State<PostPanel>
               if (plPlayerController.playerReady) {
                 final start = (item.segment.first * 1000).round();
                 Future<void> seekToEnd() => plPlayerController.seekTo(
-                  Duration(
-                    milliseconds: (item.segment.second * 1000).round(),
-                  ),
-                  isSeek: false,
+                  Duration(milliseconds: (item.segment.second * 1000).round()),
                 );
                 if (start <= 0) {
                   await seekToEnd();
@@ -470,10 +528,10 @@ class _PostPanelState extends State<PostPanel>
                   return;
                 }
                 final seek = max(0, start - 2000);
-                await plPlayerController.seekTo(
-                  Duration(milliseconds: seek),
-                  isSeek: false,
-                );
+                await plPlayerController.seekTo(Duration(milliseconds: seek));
+                if (!plPlayerController.isPlaying) {
+                  await plPlayerController.play();
+                }
                 if (start > seek) {
                   final duration = Duration(milliseconds: start);
                   late final ValueChanged<Duration> listener;
