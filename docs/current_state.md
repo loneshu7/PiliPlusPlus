@@ -1,10 +1,152 @@
 # pili++ 当前项目状态
 
-> 最后核对：2026-11-16 +08:00
+> 最后核对：2026-11-17 +08:00
 >
 > 本文件记录会随开发变化、但后续任务必须知道的事实。开始任务时先核对这里与实际
 > Git、源码和构建产物；结束任务前更新。长期规则见 `AGENTS.md`，ExoPlayer 详细兼容
 > 记录见 `docs/android_exoplayer.md`。
+
+## 字幕修复提交与 GitHub 推送（2026-11-17）
+
+- 用户明确要求“提交、推送”。在当前工作目录及 `main` 分支完成，未使用 worktree；
+  `git fetch --no-tags origin` 后起点本地与 `origin/main@e66330ca8` 一致，无需合并或改写历史。
+- 字幕源码、Flutter 事件/命中修复、JVM/widget 测试及测试目录 ignore 例外提交为
+  `21fad9bf8e934fe7c724cf00602c04ad35b62913`（`media3: decouple subtitle switching from audio and video playback`）。
+  已普通推送至 `https://github.com/loneshu7/PiliPlusPlus.git` 的 `main`，
+  `git ls-remote origin refs/heads/main` 核实远程 SHA 与当时 HEAD 一致。
+- 下方字幕验收/安装记录及工作区已有 HDR 核验文档归入独立 docs 提交，随本批推送；
+  保留原有未跟踪 `nul`。本批未更改应用源码或重新测试/构建，沿用下节 44 项 JVM、111 项 Flutter、
+  格式/分析/Release、验签和窗口字幕切换真机证据；剩余 flush 与全场景回归限制继续保留。
+- 已安装 APK 为下节最终验证包，提交后的应用源码与构建记录一致；不新建 tag/Release、不上传 APK，
+  不修改版本、证书或正式发布基线。GitHub CI 由后续运行状态判定，不能将本地通过写作远程 CI 通过。
+
+## 字幕开关真机回归失败后的独立字幕修复（2026-11-17，自动化通过，窗口字幕开关真机已验）
+
+- 用户确认上一版字幕修复包仍像重建播放器，并且更卡；上一版自动化通过不能视为实际修复成功。
+  已从 SM-S9180 抓取原始与播放器日志，音视频解码器有多次 flush，但原日志缺少字幕点击标记，
+  不能把每次 flush 直接归因于字幕操作。证据在 `build/subtitle-toggle-validation/device-regression-*.txt`。
+- 原方案只绕过部分 prepare，外挂字幕仍与音视频合并在同一 MediaSource 中。本次替换为独立
+  `Media3ApplicationSubtitles`：后台使用 Media3 原有 parser 解析外挂字幕，按主播放器真实位置、
+  播放状态和倍速同步 cue，复用既有 Flutter cue renderer。外挂字幕首次加载、开关、换语言均不再
+  `setMediaSource` / `prepare`，也不修改音视频播放器的 trackSelectionParameters。
+- 保留内置字幕原生轨道入口和外挂字幕轨道信息；字幕独立加载错误通过单独事件提示，不触发
+  音视频重试。缓存解析后的时间线，关闭/快速切换/换视频使用 revision 拒绝迟到结果，切画质保留
+  同视频字幕；会话释放时停止定时器与后台加载执行器。新增安全诊断区分字幕选择和真正 A/V prepare。
+- 真机首次开启中文外挂字幕已显示，当前 session/generation 不变且仅打开视频时有一次 A/V prepare。
+  随后发现既有 P0：`ExoSubtitleView` 在开启字幕拖动时，用覆盖整个视频的 opaque GestureDetector
+  接收输入，导致字幕开启后视频点击/纵向手势与控件操作被字幕层遮挡。这与字幕 MediaSource 重载
+  是两条独立问题，不能仅消除 prepare 就视为解决用户反馈。
+- 已将拖动监听移到实际文字 cue 的布局边界；非拖动字幕和位图使用 IgnorePointer。新增 2 项 widget
+  回归，验证文字之外的视频点击/纵向手势、文字拖动及禁用拖动时输入穿透。完整重验及最终构建
+  改存 `build/subtitle-independent-v2/`；此前独立字幕中间包已安装，仅用于首次加载排查，不能作为最终验收包。
+- 最终自动化通过：格式 1432 文件、0 changed；静态分析 0 error / 0 warning、44 条既有 info；
+  完整 Flutter 111/111（包括 2 项字幕命中测试及字幕错误独立事件回归），最终测试夹具改为 cascade
+  后定向命中测试 2/2 再验通过；Android JVM 44/44（字幕状态 10/10），沿用同 Kotlin 源码的
+  `build/subtitle-independent-validation/jvm.log`，命令跳过 `compileFlutterBuildDebug`。
+  初次前台定向测试因工具 60 秒超时中断，后用后台脚本完成；未将中断计为通过。
+- 最终 arm64 Release 构建于 10:29:57–10:32:19 +08:00 完成，准确应用源码为 `main@e66330ca8`
+  加本批未提交差异；`build/subtitle-independent-v2/source-state.json` 保存关键源码 SHA-256。
+  最终 APK：`D:/PiliPlus/build/subtitle-independent-v2/pili++-2.2.1-2026111601-arm64-v8a-release-independent-subtitles-v2-validation.apk`。
+  `verify_release.ps1 -AllowAlreadyDelivered` 通过：`pili++` / `com.shudo.plusplus`、
+  `2.2.1+2026111601`，仅 arm64-v8a，签名证书与基线
+  `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C` 一致，仍含 libmpv.so。
+  APK SHA-256：`1ECD70CBCF41D099530A5DCE984AC4A26919C63FDBC6D2227C508EE0EA1E299E`。
+- 最终包已在 SM-S9180 / Android 16 以 `adb install -r` 覆盖安装，返回 Success，保留应用数据；
+  设备 base.apk SHA-256 与本地最终包一致。仅验证包，不递增版本或更新正式发布基线。
+- 真机确认：两部 UGC 的中文 AI 字幕显示；多语视频英文首次显示、关闭/重开、英文切中文；
+  字幕开启后能调出控制层和字幕菜单，窗口播放位置持续推进，同会话/generation 不变，
+  仅每次打开新视频有 A/V prepare，字幕选择没有 prepare。
+  受控区间 10:40:13–10:43:32 的关闭/重开/换语言日志无新解码器 flush，
+  位置记录依次 463705、499611、503151、612425、661914 ms。
+  10:38:59 另有一次 flush（在首次选择后约 4 秒），因未记录 seek/跳段操作，原因未确定；
+  不宣称本批消除了所有播放卡顿，或用日志替代听感/帧耗时测量。
+- 真机进入/退出横屏全屏成功，但全屏字幕开关、倍速/seek 对齐、字幕拖动、外部文件/样式/内置轨道、
+  后台、小窗及系统 PiP 未完成完整回归；声音是否存在短暂中断未独立录制或测量。来电时曾暂停 UI
+  操作，未接听/挂断或修改通话设置。日志、截图和安装证据均在 `build/subtitle-independent-v2/`。
+- 新增上游冲突面限于 Flutter 后端字幕错误事件映射和既有 Media3 cue renderer 的命中区域，
+  页面结构未改；独立解析/时间线/会话释放集中在 Android adapter，避免在视频页复制业务实现。
+- 本批仍在原工作目录，开发验收时未提交、推送或正式发布（后续提交推送见上节），保留并发 HDR 文档和原有 `nul`。字幕/seek/全屏、
+  小窗和 PiP 的真机结论以本批后续记录为准，其他既有兼容缺口仍保留。
+
+## 字幕修复包 arm64 真机覆盖安装（2026-11-17）
+
+- 用户要求“ADB 已连接，安装到设备”。本批属于支撑性维护（安装现有 Media3 修复验证包），
+  在当前 `main@e66330ca8` 的工作区操作，保留所有既有及并发修改，未使用 worktree。
+- 已连接三星 SM-S9180 / Android 16，支持 arm64-v8a。以下节最终字幕修复验证包执行
+  `adb -s R5CXA49JXAR install -r`，返回 `Success`；未卸载或清数据。
+- 安装后 `com.shudo.plusplus` 为 `2.2.1+2026111601`、primaryCpuAbi=`arm64-v8a`，
+  lastUpdateTime=`2026-11-17 09:59:00`，已有 firstInstallTime=`2026-07-26 09:48:30` 保持不变。
+  设备 `base.apk` SHA-256 与本地已验签包一致：
+  `BBB1C3ED0A18C8B8DBFE39A77D619080B9D5CC406D7E74F5F67C876EB29D125C`。
+- 安装证据位于 `build/subtitle-toggle-validation/`：`device-install.txt`、
+  `device-package-before-install.txt`、`device-package-after-install.txt` 和 `device-apk-sha256.txt`。
+- 本批没有新构建、提交、推送或正式发布，未更新发布基线；沿用下节自动化与签名校验结果。
+  未启动应用或执行字幕开关、seek、窗口/全屏、小窗及 PiP 交互验收，修复效果仍待真机播放验证；
+  首次加载/更换外挂字幕仍会重新 prepare 的边界不变。
+
+## 字幕开关重复重载排查与修复（2026-11-17，自动化通过，待真机）
+
+- 本批属于 Media3 兼容性修复。用户反馈播放页开关字幕疑似重建播放器；调用链为
+  `VideoDetailController.setSubtitle` → 公共 `setApplicationSubtitle` → MethodChannel `setSubtitle`
+  → `ExoPlayerSession.setSubtitle`。原实现即使关闭或重复选择字幕，也执行 `prepareMedia`，
+  重新创建媒体源、`setMediaSource` 并 `prepare()`；ExoPlayer 实例与 Texture 本身没有在该路径重建。
+- 新增 `Media3SubtitleSelection` 区分请求字幕与已挂载字幕：关闭只禁用文字轨道并清空 cue，
+  重开同一字幕或重复选择不再重新挂载媒体源；换视频、切画质或软件解码回退后，根据实际重建源
+  更新挂载状态。关闭后迟到的原生 cue 不再重新显示。修复集中在 Android adapter，未修改上游页面。
+- 边界：首次加载或换成另一份外挂字幕仍使用现有 Media3 媒体源挂载流程，会重新 prepare；
+  本批没有实现任意字幕动态加入且始终不中断音视频，也不宣称字幕兼容矩阵完成。
+- 新增 7 项 JVM 状态回归，覆盖初始关闭、反复关闭/重开、重复选择、字幕切换、换视频、画质保留
+  和关闭后解码器回退；补充 `.gitignore` 的 Android JVM 测试目录例外，避免新测试被 `test*` 忽略。
+- 自动化已通过：`dart format` 1431 文件、0 changed；`dart analyze` 0 error / 0 warning、44 条既有 info；
+  完整 Flutter 测试 108/108；Android JVM 7 套件 41/41（新增字幕状态 7/7），无失败、错误或跳过。
+  JVM 命令为 `:app:testDebugUnitTest --console=plain -x compileFlutterBuildDebug`，只跳过单测不使用的
+  Flutter 资源编译；首次带完整三 ABI Flutter 资源的执行因耗时主动取消，保留日志，未作为通过结果。
+  arm64 Release 构建及最终 `git diff --check` 通过；日志及源码文件 SHA-256 清单在
+  `build/subtitle-toggle-validation/`，源码为 `main@e66330ca8` 加本批未提交差异（未使用 worktree）。
+- 最终单 ABI 构建（`--split-per-abi --target-platform android-arm64 --no-pub`）于 09:54:48–09:56:20
+  +08:00 完成；此前未启用 split 的验证包夹带 mpv 的三个 ABI 库，已另存为 `mixed-native-libs-validation.apk`
+  后缀，不作为最终包。最终包确认只有 `arm64-v8a`，仍含该 ABI 的 `libmpv.so`。
+- 最终本地验证包：
+  `D:/PiliPlus/build/subtitle-toggle-validation/pili++-2.2.1-2026111601-arm64-v8a-release-subtitle-toggle-validation.apk`。
+  `tool/verify_release.ps1 -AllowAlreadyDelivered` 通过：`pili++` / `com.shudo.plusplus`、
+  `2.2.1+2026111601`、证书 SHA-256 与项目基线
+  `775803BD534E2A0984CF8E7796DCF1D82FD7D436F10A1FEDA77C6981F4C44C5C` 一致。
+  APK SHA-256：`BBB1C3ED0A18C8B8DBFE39A77D619080B9D5CC406D7E74F5F67C876EB29D125C`。
+  此包复用现有版本号，仅用于验证，不是新正式交付；正式交付须递增 versionCode 并重新校验。
+- 构建验收时 ADB 没有设备（后续安装见上节），未做字幕开关、seek、窗口/全屏、小窗或 PiP 真机验收；首次/换字幕仍会重载，
+  以及既有三类差异缺口仍待后续处理。
+- 构建批次未提交、推送、安装或正式交付（后续安装见上节），不修改版本号、签名和发布基线；保留并发新增的 HDR 核对记录及原有 `nul`。
+
+## HDR10 真机显示链路核验（2026-11-17）
+
+- 本批属于 Media3 真机兼容性核验。设备三星 SM-S9180 / Android 16；实测已安装的
+  `com.shudo.plusplus` `2.2.1+2026111601`，本批未构建、安装或修改播放器实现。工作区并发进行的
+  字幕修复不属于本次已安装包的验证结果，原有修改均保留。
+- 播放 Linksphotograph 的《【4K HDR】哔哩哔哩 真·HDR ON！！这才是看世界的正确方式》；
+  菜单显示 HDR 真彩、HEVC、超分禁用。日志确认 Media3 1.10.1 与高通 `c2.qti.hevc.decoder`，
+  3840×1920 / 30 fps；解码输出 `color-standard=6`（BT.2020）、`color-transfer=6`（PQ），
+  dataspace `298188800`，具有非零 HDR 静态元数据（母版最大亮度 1000）。实际 HDR10 码流可播放。
+- 关键缺口：窗口态及横屏全屏的应用 Flutter SurfaceFlinger 图层均为 `V0_SRGB (142671872)`、
+  `hdr metadata types=0`，显示服务为 `mIsHdrLayerPresent=false`。临时关闭省电模式后仍相同
+  （`mBrightnessReason=manual`，无 low_pwr）；已恢复原 `low_power=1`。屏幕本身报告
+  HDR10/HLG/HDR10+（类型 2/3/4），不报告 Dolby Vision。
+- 结论：该安装版本在该设备上能解码播放 HDR10，但最终合成输出仍为 SDR/sRGB，未实现端到端
+  HDR 显示。不能将此记录标为 HDR 兼容完成，也不能凭此断言所有设备/格式的结果相同。
+  未验证色调映射准确性、物理亮度、HDR Vivid/杜比动态元数据、超分开启、小窗或 PiP 的 HDR 表现。
+- 证据与摘要：`build/hdr-validation/`，包括 `codec-playback.txt`、窗口/全屏及关闭省电后的
+  SurfaceFlinger/display 原始快照、画质菜单截图与 `report.md`。下一步针对 SurfaceProducer →
+  Flutter Texture → 合成输出的 HDR 色彩/动态范围传递定位方案；本批未引入源码冲突面，无新 APK。
+
+## HDR 支持情况核对（2026-11-16）
+
+- 本批为只读代码核对及状态记录，无播放器实现修改。画质模型保留 HDR 真彩（125）、杜比视界（126）和
+  HDR Vivid（129）；画质入口不等于已验证对应格式的完整显示效果。
+- Android Media3 1.10.1 使用 `TextureRegistry.SurfaceProducer`，通过 `setVideoSurface` 输出至 Flutter
+  Texture；桥接层未发现专门的 HDR 显示能力检测、HDR 输出模式或显式色调映射配置。设备解码能力、
+  Flutter 合成链路与屏幕共同影响最终结果，不能仅凭 ExoPlayer 自身能力宣称本项目完整支持 HDR。
+- 现有兼容文档仍将 HDR 列入待真机回归范围；本批未播放 HDR 样本，未验证 HDR 亮度/色彩、
+  HDR Vivid/杜比动态元数据或超分开启后的 HDR 输出。当前结论为：保留 HDR 选源及交给 Media3
+  播放的路径，端到端 HDR 显示效果尚未确认。不新增上游源码冲突面，无新构建或交付。
 
 ## GitHub Release 2.2.1：版本号对齐上游（2026-11-16）
 

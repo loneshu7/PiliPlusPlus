@@ -19,6 +19,34 @@ The implementation plan for making Media3 the only Android backend and removing
 `libmpv.so` from the APK is maintained in `docs/android_mpv_removal.md`. This file
 remains the detailed compatibility and historical verification record.
 
+## HDR10 device verification (2026-11-17)
+
+On Samsung SM-S9180 / Android 16, installed pili++ `2.2.1+2026111601`
+(`com.shudo.plusplus`) plays actual HDR10 through Media3 1.10.1, but this tested
+configuration does **not** produce end-to-end HDR display output.
+
+- Sample: Linksphotograph, `【4K HDR】哔哩哔哩 真·HDR ON！！这才是看世界的正确方式`.
+  The player menu shows HDR 真彩 / HEVC, with super resolution disabled.
+- Decoder: `c2.qti.hevc.decoder`, 3840×1920 at 30 fps. Its negotiated output
+  changes to BT.2020 / PQ (`color-standard=6`, `color-transfer=6`, dataspace
+  `298188800`) and contains nonzero HDR static metadata (mastering maximum 1000).
+- The application's Flutter SurfaceFlinger layer remains `V0_SRGB (142671872)`,
+  `hdr metadata types=0`, in both windowed and landscape fullscreen snapshots.
+  Display service reports `mIsHdrLayerPresent=false`. Temporarily disabling
+  battery saver produces the same result; original `low_power=1` was restored.
+- The display advertises HDR10, HLG, and HDR10+ (types 2/3/4), not Dolby Vision.
+  This confirms that actual HDR decoding and final HDR display must be tracked
+  separately. It does not establish tone-mapping accuracy or physical luminance.
+- HDR Vivid / Dolby dynamic metadata, other devices, super resolution enabled,
+  mini-player and PiP HDR behavior remain unverified. No implementation change,
+  build, install or release was performed for this investigation.
+
+Local evidence: `build/hdr-validation/report.md`, `codec-playback.txt`,
+`sf-hdr-window-final.txt`, `sf-hdr-fullscreen.txt`, `sf-hdr-low-power-0.txt`, corresponding
+`display-*.txt` snapshots, and menu screenshots. Next work must investigate HDR
+color/range propagation through SurfaceProducer, Flutter Texture and composition;
+HDR compatibility is not complete.
+
 ## Architecture
 
 The player UI, controls, gestures, danmaku, subtitles, progress overlays, and
