@@ -310,7 +310,21 @@ class _ExoSubtitleViewState extends State<ExoSubtitleView> {
         child: decoratedChild,
       );
     }
-    return decoratedChild;
+    if (widget.enableDragSubtitle && cue.bitmap == null) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onVerticalDragUpdate: (details) {
+          setState(() {
+            _padding = _padding.copyWith(
+              bottom: clampDouble(_padding.bottom - details.delta.dy, 0, 200),
+            );
+          });
+        },
+        onVerticalDragEnd: (_) => widget.onUpdatePadding?.call(_padding),
+        child: decoratedChild,
+      );
+    }
+    return IgnorePointer(child: decoratedChild);
   }
 
   Widget _subtitleView(
@@ -362,7 +376,6 @@ class _ExoSubtitleViewState extends State<ExoSubtitleView> {
   @override
   Widget build(BuildContext context) {
     final cues = _cues.toList().sortedByZIndex();
-    final hasTextCue = cues.any((cue) => cue.bitmap == null);
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -375,31 +388,6 @@ class _ExoSubtitleViewState extends State<ExoSubtitleView> {
                     duration: _duration,
                     child: _subtitleView(context, [cue]),
                   ),
-          ),
-        if (widget.enableDragSubtitle && hasTextCue)
-          Positioned.fill(
-            child: AnimatedContainer(
-              margin: _padding,
-              duration: _duration,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onVerticalDragUpdate: (details) {
-                  setState(() {
-                    _padding = _padding.copyWith(
-                      bottom: clampDouble(
-                        _padding.bottom - details.delta.dy,
-                        0,
-                        200,
-                      ),
-                    );
-                  });
-                },
-                onVerticalDragEnd: (_) {
-                  widget.onUpdatePadding?.call(_padding);
-                },
-                child: const SizedBox.expand(),
-              ),
-            ),
           ),
       ],
     );

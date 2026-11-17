@@ -31,6 +31,7 @@ class ExoPlayerEvent {
     this.playbackConfiguration,
     this.superResolution,
     this.failure,
+    this.subtitleError,
   });
 
   final int generation;
@@ -57,6 +58,7 @@ class ExoPlayerEvent {
   final String? playbackConfiguration;
   final String? superResolution;
   final ExoPlayerPlaybackFailure? failure;
+  final String? subtitleError;
 
   factory ExoPlayerEvent.fromMap(Map<Object?, Object?> map) {
     int intValue(String key) => (map[key] as num?)?.toInt() ?? 0;
@@ -116,6 +118,7 @@ class ExoPlayerEvent {
       playbackConfiguration: map['playbackConfiguration'] as String?,
       superResolution: map['superResolution'] as String?,
       failure: failure,
+      subtitleError: map['subtitleError'] as String?,
     );
   }
 }
@@ -270,6 +273,7 @@ class ExoPlayerController {
                 ? next.superResolution
                 : player.state.superResolution,
             failure: next.failure,
+            subtitleError: next.subtitleError,
           );
           player._controller.add(player.state);
         });

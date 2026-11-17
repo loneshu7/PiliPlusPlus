@@ -152,3 +152,5 @@ dist
 test*
 !/test/
 !/test/**
+!/android/app/src/test/
+!/android/app/src/test/**

@@ -348,7 +348,6 @@ private class ExoPlayerSession(
     private var height = 0
     private var rotationDegrees = 0
     private var mediaRequest: MediaRequest? = null
-    private var subtitleRequest: SubtitleRequest? = null
     private var subtitleCues: List<Map<String, Any?>> = emptyList()
     private var videoDecoder: String? = null
     private var audioDecoder: String? = null
@@ -372,6 +371,18 @@ private class ExoPlayerSession(
     )
     private val animatedWebpTasks = ConcurrentHashMap<Long, AnimatedWebpCapture>()
     private val disposed = AtomicBoolean(false)
+    private val applicationSubtitles = Media3ApplicationSubtitles(
+        context = context,
+        handler = mainHandler,
+        positionMs = { player.currentPosition },
+        isPlaying = { player.isPlaying },
+        speed = { player.playbackParameters.speed },
+        onCues = ::renderSubtitleCues,
+        onError = { error ->
+            Log.e(EXO_PLAYER_TAG, "Subtitle load failed session=$id generation=$mediaGeneration", error)
+            sendEvent(baseEvent("subtitleError") + mapOf("subtitleError" to "字幕加载失败，请重新选择字幕"))
+        },
+    )
     val textureId: Long
         get() = surfaceProducer.id()
 
@@ -418,9 +429,7 @@ private class ExoPlayerSession(
         firstVideoFrameRendered = false
         resetSuperResolutionForNewMedia()
         resetVideoSizeForNewMedia(expectedWidth, expectedHeight)
-        if (!preserveSubtitle) {
-            subtitleRequest = null
-        }
+        applicationSubtitles.onMediaOpened(preserveSubtitle)
         subtitleCueSequence.incrementAndGet()
         updateSubtitleCues(emptyList())
         prepareMedia(positionMs, playWhenReady)
@@ -516,8 +525,8 @@ private class ExoPlayerSession(
         mimeType: String?,
     ) {
         val resolvedMimeType = resolveSubtitleMimeType(mimeType, uri)
-        subtitleRequest = when {
-            !data.isNullOrEmpty() -> SubtitleRequest(
+        val subtitle = when {
+            !data.isNullOrEmpty() -> ApplicationSubtitleRequest(
                 uri = Uri.parse(
                     "data:$resolvedMimeType;base64," +
                         Base64.encodeToString(data.toByteArray(Charsets.UTF_8), Base64.NO_WRAP),
@@ -526,7 +535,7 @@ private class ExoPlayerSession(
                 label = label,
                 mimeType = resolvedMimeType,
             )
-            !uri.isNullOrEmpty() -> SubtitleRequest(
+            !uri.isNullOrEmpty() -> ApplicationSubtitleRequest(
                 uri = resolveMediaUri(uri),
                 language = language,
                 label = label,
@@ -534,15 +543,9 @@ private class ExoPlayerSession(
             )
             else -> null
         }
-        player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
-            .clearOverridesOfType(C.TRACK_TYPE_TEXT)
-            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, subtitleRequest == null)
-            .build()
-        subtitleCueSequence.incrementAndGet()
-        updateSubtitleCues(emptyList())
-        if (mediaRequest != null) {
-            prepareMedia(player.currentPosition, player.playWhenReady)
-        }
+        applicationSubtitles.select(subtitle, mediaRequest?.headers.orEmpty())
+        Log.i(EXO_PLAYER_TAG, "Subtitle selection session=$id generation=$mediaGeneration enabled=${subtitle != null} positionMs=${player.currentPosition}; A/V source unchanged")
+        emitState()
     }
 
     fun setTrackSelection(
@@ -584,12 +587,14 @@ private class ExoPlayerSession(
             }
             else -> error("Unsupported track selection mode: $mode")
         }
+        if (trackType == C.TRACK_TYPE_TEXT) applicationSubtitles.selectEmbedded()
         player.trackSelectionParameters = builder.build()
         emitState()
     }
 
     private fun prepareMedia(positionMs: Long, playWhenReady: Boolean) {
         val request = mediaRequest ?: return
+        applicationSubtitles.invalidateClock()
         val httpFactory = DefaultHttpDataSource.Factory()
             .setAllowCrossProtocolRedirects(true)
             .setDefaultRequestProperties(request.headers)
@@ -597,30 +602,17 @@ private class ExoPlayerSession(
         val dataSourceFactory = DefaultDataSource.Factory(context, httpFactory)
         val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory)
 
-        fun source(url: String, subtitle: SubtitleRequest? = null): MediaSource {
+        fun source(url: String): MediaSource {
             val uri = resolveMediaUri(url)
             val item = MediaItem.Builder().setUri(uri).apply {
                 if (request.isLive) {
                     setLiveConfiguration(MediaItem.LiveConfiguration.Builder().build())
                 }
-                if (subtitle != null) {
-                    setSubtitleConfigurations(
-                        listOf(
-                            MediaItem.SubtitleConfiguration.Builder(subtitle.uri)
-                                .setId(APP_SUBTITLE_TRACK_ID)
-                                .setMimeType(subtitle.mimeType)
-                                .setLanguage(subtitle.language)
-                                .setLabel(subtitle.label)
-                                .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
-                                .build(),
-                        ),
-                    )
-                }
             }.build()
             return mediaSourceFactory.createMediaSource(item)
         }
 
-        val videoSource = source(request.videoUrl, subtitleRequest)
+        val videoSource = source(request.videoUrl)
         val mediaSource = if (!request.audioUrl.isNullOrBlank() &&
             request.audioUrl != request.videoUrl
         ) {
@@ -643,10 +635,12 @@ private class ExoPlayerSession(
             }
             prepare()
         }
+        Log.i(EXO_PLAYER_TAG, "A/V prepare session=$id generation=$mediaGeneration positionMs=$positionMs")
         emitState()
     }
 
     override fun onEvents(player: Player, events: Player.Events) {
+        applicationSubtitles.synchronize()
         emitState()
     }
 
@@ -686,7 +680,11 @@ private class ExoPlayerSession(
     }
 
     override fun onCues(cueGroup: CueGroup) {
-        val cues = cueGroup.cues.toList()
+        if (applicationSubtitles.ownsOutput) return
+        renderSubtitleCues(cueGroup.cues.toList())
+    }
+
+    private fun renderSubtitleCues(cues: List<Cue>) {
         val sequence = subtitleCueSequence.incrementAndGet()
         val generation = mediaGeneration
         if (cues.none { it.bitmap != null }) {
@@ -768,10 +766,6 @@ private class ExoPlayerSession(
             it.playWhenReady = false
             it.setVideoSurface(surfaceProducer.surface)
         }
-        player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
-            .clearOverridesOfType(C.TRACK_TYPE_TEXT)
-            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, subtitleRequest == null)
-            .build()
         videoDecoder = null
         audioDecoder = null
         firstVideoFrameRendered = false
@@ -1078,7 +1072,7 @@ private class ExoPlayerSession(
                 "height" to height,
                 "speed" to player.playbackParameters.speed.toDouble(),
                 "volume" to player.volume.toDouble(),
-                "tracks" to serializeTracks(player),
+                "tracks" to subtitleAwareTracks(),
                 "videoDecoder" to videoDecoder,
                 "audioDecoder" to audioDecoder,
                 "firstVideoFrameRendered" to firstVideoFrameRendered,
@@ -1087,6 +1081,29 @@ private class ExoPlayerSession(
                 "audioNormalization" to mediaRequest?.audioNormalization?.filter,
                 "superResolution" to superResolutionDescription,
             ),
+        )
+    }
+
+    private fun subtitleAwareTracks(): List<Map<String, Any?>> {
+        val tracks = serializeTracks(player).map { track ->
+            if (applicationSubtitles.ownsOutput && track["type"] == "subtitle") {
+                track + ("selected" to false)
+            } else track
+        }
+        val subtitle = applicationSubtitles.requested ?: return tracks
+        return tracks + serializeFormat(
+            format = Format.Builder()
+                .setId(APP_SUBTITLE_TRACK_ID)
+                .setSampleMimeType(subtitle.mimeType)
+                .setLanguage(subtitle.language)
+                .setLabel(subtitle.label)
+                .build(),
+            type = "subtitle",
+            groupIndex = -1,
+            trackIndex = 0,
+            selected = true,
+            supported = true,
+            fallbackId = APP_SUBTITLE_TRACK_ID,
         )
     }
 
@@ -1129,6 +1146,7 @@ private class ExoPlayerSession(
 
     fun dispose() {
         if (!disposed.compareAndSet(false, true)) return
+        applicationSubtitles.dispose()
         subtitleCueSequence.incrementAndGet()
         subtitleEncoder.shutdownNow()
         animatedWebpTasks.values.forEach(AnimatedWebpCapture::cancel)
@@ -1579,12 +1597,6 @@ private const val DEFAULT_TARGET_BUFFER_BYTES = 4 * 1024 * 1024
 private const val MIN_BUFFER_DURATION_MS = 500L
 private const val DEFAULT_BUFFER_DURATION_MS = 16000
 
-private data class SubtitleRequest(
-    val uri: Uri,
-    val language: String?,
-    val label: String?,
-    val mimeType: String,
-)
 
 private fun serializePlaybackError(
     error: PlaybackException,

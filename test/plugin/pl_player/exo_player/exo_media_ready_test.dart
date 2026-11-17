@@ -84,4 +84,35 @@ void main() {
     await emit(player, {'generation': 0, 'ready': true, 'buffering': false});
     expect(player.isCurrentMediaReady, isTrue);
   }, timeout: const Timeout(Duration(seconds: 30)));
+  test(
+    'subtitle loading errors preserve playback and clear after the event',
+    () async {
+      final player = await ExoPlayerController.create();
+      addTearDown(player.dispose);
+      await emit(player, {
+        'generation': 0,
+        'ready': true,
+        'playing': true,
+        'playWhenReady': true,
+        'positionMs': 42000,
+      });
+      await emit(player, {
+        'generation': 0,
+        'type': 'subtitleError',
+        'subtitleError': '字幕加载失败，请重新选择字幕',
+      });
+      expect(player.state.subtitleError, isNotNull);
+      expect(player.state.failure, isNull);
+      expect(player.state.playing, isTrue);
+      expect(player.state.position, const Duration(seconds: 42));
+      expect(player.isCurrentMediaReady, isTrue);
+      await emit(player, {
+        'generation': 0,
+        'type': 'progress',
+        'positionMs': 43000,
+      });
+      expect(player.state.subtitleError, isNull);
+      expect(player.state.playing, isTrue);
+    },
+  );
 }

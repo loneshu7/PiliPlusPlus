@@ -1563,6 +1563,10 @@ class PlPlayerController with BlockConfigMixin, AudioNormalizationMixin {
     bool lastCompleted = false;
     _exoSubscription = player.events.listen((event) {
       if (_playerCount == 0 || !identical(player, _exoPlayerController)) return;
+      if (event.subtitleError case final message?) {
+        SmartDialog.showToast(message);
+        return;
+      }
       if (event.failure case final failure?) {
         _handleExoFailure(player, failure);
         return;
